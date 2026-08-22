@@ -1,0 +1,15 @@
+state,district,age_band,gender,period,count
+maharashtra,mumbai_city,18-35,M,2026-01,15400
+maharashtra,mumbai_city,18-35,F,2026-01,14900
+maharashtra,mumbai_city,35-60,M,2026-01,12100
+maharashtra,mumbai_city,35-60,F,2026-01,11800
+maharashtra,pune,18-35,M,2026-01,9800
+maharashtra,pune,18-35,F,2026-01,9400
+karnataka,bengaluru_urban,18-35,M,2026-01,18500
+karnataka,bengaluru_urban,18-35,F,2026-01,17900
+karnataka,bengaluru_urban,35-60,M,2026-01,14200
+karnataka,bengaluru_urban,35-60,F,2026-01,13800
+uttar_pradesh,lucknow,18-35,M,2026-01,11000
+uttar_pradesh,lucknow,18-35,F,2026-01,10500
+tamil_nadu,chennai,18-35,M,2026-01,9200
+tamil_nadu,chennai,18-35,F,2026-01,8900

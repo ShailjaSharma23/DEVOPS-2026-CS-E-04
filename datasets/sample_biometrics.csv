@@ -1,0 +1,13 @@
+state,district,type,age_band,period,count
+maharashtra,mumbai_city,enrollment,18-35,2026-01,2450
+maharashtra,mumbai_city,update,18-35,2026-01,5100
+maharashtra,mumbai_city,update,35-60,2026-01,3400
+maharashtra,pune,enrollment,0-5,2026-01,1200
+maharashtra,pune,update,18-35,2026-01,2900
+karnataka,bengaluru_urban,enrollment,18-35,2026-01,3100
+karnataka,bengaluru_urban,update,18-35,2026-01,6800
+karnataka,bengaluru_urban,update,35-60,2026-01,4200
+uttar_pradesh,lucknow,enrollment,0-5,2026-01,2150
+uttar_pradesh,lucknow,update,18-35,2026-01,3900
+tamil_nadu,chennai,enrollment,0-5,2026-01,1050
+tamil_nadu,chennai,update,18-35,2026-01,2800

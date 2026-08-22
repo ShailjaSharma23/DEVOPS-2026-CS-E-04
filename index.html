@@ -1,0 +1,1971 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ASTRA — Aadhaar Statistical Trends & Resource Analytics</title>
+  <!-- Google Fonts: Inter for UI, JetBrains Mono for data -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <!-- FontAwesome Icons for modern dashboard styling -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Chart.js CDN for interactive data rendering -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    /* ----------------------------------------------------
+       ASTRA Core Design System (Vanilla CSS & Tokens)
+       ---------------------------------------------------- */
+    :root {
+      /* Colors: Slate & Teal themed, high-credibility government utility colors */
+      --bg-primary: #0b132b;
+      --bg-secondary: #1c2541;
+      --bg-tertiary: #3a506b;
+      --accent-color: #5bc0be;
+      --accent-hover: #6fffe9;
+      --text-main: #f4f6f9;
+      --text-muted: #a0aec0;
+      --border-color: rgba(255, 255, 255, 0.08);
+      --card-bg: rgba(28, 37, 65, 0.85);
+      --card-hover: rgba(58, 80, 107, 0.4);
+      --font-ui: 'Inter', sans-serif;
+      --font-code: 'JetBrains Mono', monospace;
+      
+      /* Semantic Status Colors */
+      --status-ready: #10b981;
+      --status-ready-bg: rgba(16, 185, 129, 0.1);
+      --status-failed: #ef4444;
+      --status-failed-bg: rgba(239, 68, 68, 0.1);
+      --status-processing: #f59e0b;
+      --status-processing-bg: rgba(245, 158, 11, 0.1);
+      --status-uploaded: #3b82f6;
+      --status-uploaded-bg: rgba(59, 130, 246, 0.1);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-primary);
+      color: var(--text-main);
+      font-family: var(--font-ui);
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+      font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    }
+
+    /* ----------------------------------------------------
+       Sidebar & Navigation
+       ---------------------------------------------------- */
+    .sidebar {
+      width: 260px;
+      background-color: var(--bg-secondary);
+      border-right: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      flex-shrink: 0;
+      transition: width 0.3s ease;
+    }
+
+    .sidebar-header {
+      padding: 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .sidebar-header i {
+      color: var(--accent-color);
+      font-size: 1.5rem;
+    }
+
+    .sidebar-header h1 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--text-main);
+    }
+
+    .sidebar-menu {
+      list-style: none;
+      padding: 24px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      flex-grow: 1;
+      overflow-y: auto;
+    }
+
+    .menu-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      color: var(--text-muted);
+      text-decoration: none;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .menu-item:hover {
+      background-color: rgba(255, 255, 255, 0.03);
+      color: var(--text-main);
+    }
+
+    .menu-item.active {
+      background-color: rgba(91, 192, 190, 0.1);
+      color: var(--accent-color);
+      font-weight: 600;
+      border: 1px solid rgba(91, 192, 190, 0.2);
+    }
+
+    .menu-item.hidden {
+      display: none !important;
+    }
+
+    .sidebar-footer {
+      padding: 16px;
+      border-top: 1px solid var(--border-color);
+      background-color: rgba(0, 0, 0, 0.1);
+    }
+
+    .role-indicator {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .role-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+    }
+
+    .role-select {
+      width: 100%;
+      background-color: var(--bg-primary);
+      color: var(--text-main);
+      border: 1px solid var(--border-color);
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-family: var(--font-ui);
+      font-size: 0.85rem;
+      cursor: pointer;
+      outline: none;
+    }
+
+    .role-select:focus {
+      border-color: var(--accent-color);
+    }
+
+    /* ----------------------------------------------------
+       Main Content Layout
+       ---------------------------------------------------- */
+    .main-wrapper {
+      display: flex;
+      flex-direction: column;
+      flex-grow: 1;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    .top-bar {
+      height: 70px;
+      background-color: var(--bg-secondary);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 32px;
+      flex-shrink: 0;
+    }
+
+    .top-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+    }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .user-profile {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .user-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background-color: var(--bg-tertiary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      color: var(--accent-color);
+      border: 1px solid rgba(91, 192, 190, 0.3);
+    }
+
+    .user-details {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .user-name {
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+
+    .user-role-badge {
+      font-size: 0.75rem;
+      color: var(--accent-color);
+    }
+
+    .content-body {
+      flex-grow: 1;
+      overflow-y: auto;
+      padding: 32px;
+      background-color: var(--bg-primary);
+    }
+
+    /* ----------------------------------------------------
+       Common UI Components
+       ---------------------------------------------------- */
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 24px;
+      margin-bottom: 32px;
+    }
+
+    @media (max-width: 1200px) {
+      .dashboard-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 768px) {
+      .dashboard-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .kpi-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .kpi-card:hover {
+      transform: translateY(-2px);
+      border-color: rgba(91, 192, 190, 0.3);
+      background: var(--card-hover);
+    }
+
+    .kpi-info {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .kpi-label {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .kpi-value {
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: var(--text-main);
+      font-family: var(--font-code);
+    }
+
+    .kpi-change {
+      font-size: 0.75rem;
+      margin-top: 4px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .kpi-change.up { color: var(--status-ready); }
+    .kpi-change.down { color: var(--status-failed); }
+
+    .kpi-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 8px;
+      background-color: rgba(255, 255, 255, 0.03);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+      color: var(--accent-color);
+    }
+
+    /* Filter Panel */
+    .filter-panel {
+      background-color: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 16px 24px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      align-items: center;
+      margin-bottom: 32px;
+    }
+
+    .filter-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .filter-group label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .filter-select, .filter-input {
+      background-color: var(--bg-primary);
+      color: var(--text-main);
+      border: 1px solid var(--border-color);
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-family: var(--font-ui);
+      font-size: 0.9rem;
+      min-width: 180px;
+      outline: none;
+      transition: border-color 0.2s ease;
+    }
+
+    .filter-select:focus, .filter-input:focus {
+      border-color: var(--accent-color);
+    }
+
+    /* Panels & Sub-Layouts */
+    .panel {
+      display: none;
+      animation: fadeIn 0.4s ease;
+    }
+
+    .panel.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .grid-2col {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 32px;
+      margin-bottom: 32px;
+    }
+
+    @media (max-width: 992px) {
+      .grid-2col {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .visual-card {
+      background-color: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      position: relative;
+    }
+
+    .visual-card-title {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text-main);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .visual-card-desc {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-top: -8px;
+    }
+
+    .chart-container {
+      position: relative;
+      width: 100%;
+      height: 300px;
+    }
+
+    /* ----------------------------------------------------
+       Data Ingestion (Datasets Panel)
+       ---------------------------------------------------- */
+    .upload-zone {
+      border: 2px dashed rgba(91, 192, 190, 0.3);
+      background-color: rgba(28, 37, 65, 0.4);
+      border-radius: 12px;
+      padding: 48px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .upload-zone:hover {
+      border-color: var(--accent-color);
+      background-color: rgba(91, 192, 190, 0.05);
+    }
+
+    .upload-icon {
+      font-size: 3rem;
+      color: var(--accent-color);
+    }
+
+    .upload-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+
+    .upload-hint {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .file-input {
+      display: none;
+    }
+
+    /* Processing Job Log */
+    .dataset-table-card {
+      margin-top: 32px;
+    }
+
+    .astra-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.9rem;
+    }
+
+    .astra-table th {
+      background-color: rgba(0, 0, 0, 0.2);
+      color: var(--text-muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 0.75rem;
+      letter-spacing: 0.05em;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .astra-table td {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border-color);
+      color: var(--text-main);
+      font-family: var(--font-ui);
+    }
+
+    .astra-table tbody tr:hover {
+      background-color: rgba(255, 255, 255, 0.02);
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    .status-badge.ready {
+      color: var(--status-ready);
+      background-color: var(--status-ready-bg);
+    }
+
+    .status-badge.failed {
+      color: var(--status-failed);
+      background-color: var(--status-failed-bg);
+    }
+
+    .status-badge.processing {
+      color: var(--status-processing);
+      background-color: var(--status-processing-bg);
+    }
+
+    .status-badge.uploaded {
+      color: var(--status-uploaded);
+      background-color: var(--status-uploaded-bg);
+    }
+
+    /* Progress bar */
+    .progress-wrapper {
+      width: 100%;
+      background-color: rgba(255, 255, 255, 0.05);
+      border-radius: 4px;
+      height: 6px;
+      overflow: hidden;
+      margin-top: 8px;
+    }
+
+    .progress-bar {
+      height: 100%;
+      background-color: var(--accent-color);
+      width: 0%;
+      transition: width 0.1s linear;
+    }
+
+    /* ----------------------------------------------------
+       Form Styles (User Management)
+       ---------------------------------------------------- */
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
+    }
+
+    .btn {
+      background-color: var(--accent-color);
+      color: var(--bg-primary);
+      font-family: var(--font-ui);
+      font-weight: 600;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.95rem;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .btn:hover {
+      background-color: var(--accent-hover);
+      box-shadow: 0 0 12px rgba(91, 192, 190, 0.3);
+    }
+
+    .btn-secondary {
+      background-color: transparent;
+      color: var(--text-main);
+      border: 1px solid var(--border-color);
+    }
+
+    .btn-secondary:hover {
+      background-color: rgba(255, 255, 255, 0.05);
+      box-shadow: none;
+    }
+
+    .text-code {
+      font-family: var(--font-code);
+      font-size: 0.85rem;
+      background-color: rgba(0, 0, 0, 0.2);
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    /* ----------------------------------------------------
+       Forecasting Metrics Layout
+       ---------------------------------------------------- */
+    .metrics-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-top: 16px;
+    }
+
+    .metric-box {
+      background-color: rgba(0,0,0,0.15);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 16px;
+      text-align: center;
+    }
+
+    .metric-box-label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .metric-box-value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--accent-color);
+      font-family: var(--font-code);
+      margin-top: 4px;
+    }
+
+    /* ----------------------------------------------------
+       Audit Log Details
+       ---------------------------------------------------- */
+    .audit-meta {
+      font-family: var(--font-code);
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background-color: var(--bg-secondary);
+      border: 1px solid var(--accent-color);
+      color: var(--text-main);
+      padding: 16px 24px;
+      border-radius: 8px;
+      box-shadow: 0 10px 25px -5px rgba(0,0,0,0.5);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      z-index: 1000;
+      transform: translateY(150%);
+      transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .toast.show {
+      transform: translateY(0);
+    }
+
+    .toast i {
+      color: var(--accent-color);
+    }
+
+    /* Info Alerts */
+    .alert-banner {
+      background: rgba(91, 192, 190, 0.05);
+      border: 1px solid rgba(91, 192, 190, 0.2);
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 24px;
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+
+    .alert-banner i {
+      color: var(--accent-color);
+      font-size: 1.2rem;
+      margin-top: 2px;
+    }
+
+    .alert-banner h4 {
+      font-weight: 600;
+      color: var(--text-main);
+      margin-bottom: 4px;
+    }
+
+    .alert-banner p {
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ====================================================
+       ASTRA Sidebar Navigation
+       ==================================================== -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <i class="fa-solid fa-chart-line"></i>
+      <h1>ASTRA</h1>
+    </div>
+    <ul class="sidebar-menu">
+      <li class="menu-item active" data-panel="dashboard">
+        <i class="fa-solid fa-house"></i>
+        <span>Dashboard</span>
+      </li>
+      <li class="menu-item" data-panel="datasets" id="nav-datasets">
+        <i class="fa-solid fa-database"></i>
+        <span>Datasets</span>
+      </li>
+      <li class="menu-item" data-panel="analytics" id="nav-analytics">
+        <i class="fa-solid fa-chart-pie"></i>
+        <span>Demographic Analytics</span>
+      </li>
+      <li class="menu-item" data-panel="forecasting" id="nav-forecasting">
+        <i class="fa-solid fa-bullseye"></i>
+        <span>Resource Forecasting</span>
+      </li>
+      <li class="menu-item" data-panel="users" id="nav-users">
+        <i class="fa-solid fa-users-gear"></i>
+        <span>User Control</span>
+      </li>
+      <li class="menu-item" data-panel="audit" id="nav-audit">
+        <i class="fa-solid fa-shield-halved"></i>
+        <span>Audit Logs</span>
+      </li>
+    </ul>
+    <div class="sidebar-footer">
+      <div class="role-indicator">
+        <span class="role-label">Logged Access Level</span>
+        <select class="role-select" id="role-selector">
+          <option value="administrator">Administrator</option>
+          <option value="analyst">Data Analyst</option>
+          <option value="planning_officer">Resource Planning Officer</option>
+          <option value="department_officer">Department Officer</option>
+        </select>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ====================================================
+       Main Working Area
+       ==================================================== -->
+  <div class="main-wrapper">
+    <header class="top-bar">
+      <div class="top-title" id="bar-title">Dashboard Overview</div>
+      <div class="top-actions">
+        <div class="user-profile">
+          <div class="user-avatar" id="avatar-letters">AD</div>
+          <div class="user-details">
+            <span class="user-name" id="user-display-name">Gov. Officer</span>
+            <span class="user-role-badge" id="user-display-role">Administrator</span>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="content-body">
+      
+      <!-- General Filter Toolbar for Analytics & Ingestion -->
+      <section class="filter-panel" id="global-filter-panel">
+        <div class="filter-group">
+          <label for="filter-state">State / Region</label>
+          <select class="filter-select" id="filter-state">
+            <option value="all">National Aggregation</option>
+            <option value="maharashtra">Maharashtra (MH)</option>
+            <option value="uttar_pradesh">Uttar Pradesh (UP)</option>
+            <option value="tamil_nadu">Tamil Nadu (TN)</option>
+            <option value="karnataka">Karnataka (KA)</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label for="filter-district">District</label>
+          <select class="filter-select" id="filter-district" disabled>
+            <option value="all">All Districts</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label for="filter-time">Time Window</label>
+          <select class="filter-select" id="filter-time">
+            <option value="12m">Past 12 Months</option>
+            <option value="6m">Past 6 Months</option>
+            <option value="3y">Past 3 Years</option>
+          </select>
+        </div>
+      </section>
+
+      <!-- ====================================================
+           PANEL: Dashboard Summary
+           ==================================================== -->
+      <div class="panel active" id="panel-dashboard">
+        <div class="dashboard-grid">
+          <div class="kpi-card">
+            <div class="kpi-info">
+              <span class="kpi-label">Aggregated Demographic Rows</span>
+              <span class="kpi-value" id="kpi-demographics">42,912,410</span>
+              <span class="kpi-change up"><i class="fa-solid fa-arrow-up"></i> 8.4% YoY</span>
+            </div>
+            <div class="kpi-icon"><i class="fa-solid fa-users"></i></div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-info">
+              <span class="kpi-label">Biometric Update Trans.</span>
+              <span class="kpi-value" id="kpi-biometrics">18,349,201</span>
+              <span class="kpi-change up"><i class="fa-solid fa-arrow-up"></i> 4.1% MoM</span>
+            </div>
+            <div class="kpi-icon"><i class="fa-solid fa-fingerprint"></i></div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-info">
+              <span class="kpi-label">Active Datasets</span>
+              <span class="kpi-value" id="kpi-datasets">24</span>
+              <span class="kpi-change up"><i class="fa-solid fa-plus"></i> Ingestion Active</span>
+            </div>
+            <div class="kpi-icon"><i class="fa-solid fa-database"></i></div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-info">
+              <span class="kpi-label">Allocation Gaps Flagged</span>
+              <span class="kpi-value" id="kpi-gaps">4</span>
+              <span class="kpi-change down"><i class="fa-solid fa-circle-exclamation"></i> Immediate action</span>
+            </div>
+            <div class="kpi-icon"><i class="fa-solid fa-circle-exclamation"></i></div>
+          </div>
+        </div>
+
+        <div class="grid-2col">
+          <div class="visual-card">
+            <div class="visual-card-title">
+              <span>National Enrollment & Updates (Trends)</span>
+              <i class="fa-solid fa-chart-line text-muted"></i>
+            </div>
+            <div class="chart-container">
+              <canvas id="dashboard-trend-chart"></canvas>
+            </div>
+          </div>
+          <div class="visual-card">
+            <div class="visual-card-title">
+              <span>Age Band Distribution</span>
+              <i class="fa-solid fa-chart-pie text-muted"></i>
+            </div>
+            <div class="chart-container">
+              <canvas id="dashboard-age-chart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ====================================================
+           PANEL: Datasets Management
+           ==================================================== -->
+      <div class="panel" id="panel-datasets">
+        <div class="alert-banner" id="datasets-auth-note">
+          <i class="fa-solid fa-info-circle"></i>
+          <div>
+            <h4>Ingestion Engine Status</h4>
+            <p>Only data analysts and administrators can upload files. Department officers and planning officers have read-only access to ingested metadata.</p>
+          </div>
+        </div>
+
+        <div id="upload-module">
+          <div class="upload-zone" id="dropzone">
+            <i class="fa-solid fa-cloud-arrow-up upload-icon"></i>
+            <div class="upload-title">Ingest Aadhaar Aggregation Records</div>
+            <div class="upload-hint">Drag & drop CSV files or click to browse. Strict format checking will occur immediately.</div>
+            <input type="file" id="file-selector-input" class="file-input" accept=".csv">
+          </div>
+
+          <div id="upload-progress-container" style="display:none; margin-top:24px; background:var(--bg-secondary); border: 1px solid var(--border-color); border-radius:8px; padding:16px;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:0.9rem;">
+              <span id="upload-filename" style="font-weight:600;">file.csv</span>
+              <span id="upload-status" class="status-badge processing">Uploading</span>
+            </div>
+            <div class="progress-wrapper">
+              <div class="progress-bar" id="ingest-progress"></div>
+            </div>
+            <div id="upload-details" style="font-size:0.8rem; color:var(--text-muted); margin-top:8px;">Structuring variables...</div>
+          </div>
+        </div>
+
+        <div class="visual-card dataset-table-card">
+          <div class="visual-card-title">
+            <span>Historical Ingested Datasets</span>
+            <i class="fa-solid fa-clock-rotate-left text-muted"></i>
+          </div>
+          <div style="overflow-x: auto;">
+            <table class="astra-table">
+              <thead>
+                <tr>
+                  <th>Dataset ID</th>
+                  <th>Name</th>
+                  <th>Category</th>
+                  <th>Rows</th>
+                  <th>Quality Score</th>
+                  <th>Ingested At</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="dataset-history-list">
+                <tr>
+                  <td class="text-code">D-8021</td>
+                  <td>mh_demographics_q2_2026.csv</td>
+                  <td>Demographics</td>
+                  <td>412,410</td>
+                  <td class="text-code">99.8%</td>
+                  <td>2026-08-10 14:24</td>
+                  <td><span class="status-badge ready"><i class="fa-solid fa-circle-check"></i> Ready</span></td>
+                </tr>
+                <tr>
+                  <td class="text-code">D-8020</td>
+                  <td>up_biometrics_2026_07.csv</td>
+                  <td>Biometrics</td>
+                  <td>1,894,200</td>
+                  <td class="text-code">98.4%</td>
+                  <td>2026-08-08 09:12</td>
+                  <td><span class="status-badge ready"><i class="fa-solid fa-circle-check"></i> Ready</span></td>
+                </tr>
+                <tr>
+                  <td class="text-code">D-8019</td>
+                  <td>tn_kits_allocations_2026.csv</td>
+                  <td>Resource Allocation</td>
+                  <td>84,102</td>
+                  <td class="text-code">100.0%</td>
+                  <td>2026-08-05 16:50</td>
+                  <td><span class="status-badge ready"><i class="fa-solid fa-circle-check"></i> Ready</span></td>
+                </tr>
+                <tr>
+                  <td class="text-code">D-8018</td>
+                  <td>ka_demographics_corrupted.csv</td>
+                  <td>Demographics</td>
+                  <td>0</td>
+                  <td class="text-code">0.0%</td>
+                  <td>2026-08-01 11:05</td>
+                  <td><span class="status-badge failed"><i class="fa-solid fa-circle-xmark"></i> Missing Headers</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ====================================================
+           PANEL: Demographic Analytics
+           ==================================================== -->
+      <div class="panel" id="panel-analytics">
+        <div class="grid-2col">
+          <div class="visual-card">
+            <div class="visual-card-title">
+              <span>Demographic Gender Breakdown</span>
+              <i class="fa-solid fa-venus-mars text-muted"></i>
+            </div>
+            <div class="chart-container">
+              <canvas id="analytics-gender-chart"></canvas>
+            </div>
+          </div>
+          <div class="visual-card">
+            <div class="visual-card-title">
+              <span>Biometric Update Types</span>
+              <i class="fa-solid fa-fingerprint text-muted"></i>
+            </div>
+            <div class="chart-container">
+              <canvas id="analytics-biometric-chart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <div class="visual-card">
+          <div class="visual-card-title">
+            <span>Demographic Age-Distribution Split (Details)</span>
+            <i class="fa-solid fa-circle-info text-muted"></i>
+          </div>
+          <p class="visual-card-desc">Detailed counts by age bracket. This data helps identify target age blocks for demographic updates.</p>
+          <div style="overflow-x: auto;">
+            <table class="astra-table">
+              <thead>
+                <tr>
+                  <th>Age Bracket</th>
+                  <th>Male</th>
+                  <th>Female</th>
+                  <th>Third Gender / Other</th>
+                  <th>Total</th>
+                  <th>Growth Rate (YoY)</th>
+                </tr>
+              </thead>
+              <tbody id="demographic-age-table-rows">
+                <!-- Javascript populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ====================================================
+           PANEL: Resource Forecasting
+           ==================================================== -->
+      <div class="panel" id="panel-forecasting">
+        <div class="filter-panel" style="background-color: rgba(255, 255, 255, 0.02); margin-bottom: 24px;">
+          <div class="filter-group">
+            <label for="forecast-resource">Resource Type</label>
+            <select class="filter-select" id="forecast-resource">
+              <option value="enrollment_kits">Aadhaar Enrollment Kits</option>
+              <option value="biometric_scanners">Biometric Iris Scanners</option>
+              <option value="personnel_units">Trained Personnel (Units)</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label for="forecast-horizon">Forecast Horizon</label>
+            <select class="filter-select" id="forecast-horizon">
+              <option value="6">6 Months Horizon</option>
+              <option value="12">12 Months Horizon</option>
+            </select>
+          </div>
+          <div class="filter-group" style="padding-top: 18px;">
+            <button class="btn" id="generate-forecast-btn">
+              <i class="fa-solid fa-wand-magic-sparkles"></i> Run Prophet Forecast
+            </button>
+          </div>
+        </div>
+
+        <div class="visual-card">
+          <div class="visual-card-title" style="display:flex; justify-content:space-between; align-items:center;">
+            <span>Resource demand forecasting (Prophet Time-Series fitting)</span>
+            <span class="status-badge ready" id="forecast-model-badge"><i class="fa-solid fa-server"></i> Model: Prophet v1.2</span>
+          </div>
+          <p class="visual-card-desc">Solid line indicates historical allocations. Dotted line indicates forecasts. Shaded band represents 95% confidence intervals.</p>
+          <div class="chart-container" style="height: 380px;">
+            <canvas id="forecast-main-chart"></canvas>
+          </div>
+
+          <div class="metrics-row">
+            <div class="metric-box">
+              <div class="metric-box-label">Mean Absolute Error (MAE)</div>
+              <div class="metric-box-value" id="metric-mae">12.42</div>
+            </div>
+            <div class="metric-box">
+              <div class="metric-box-label">Root Mean Square Error (RMSE)</div>
+              <div class="metric-box-value" id="metric-rmse">16.89</div>
+            </div>
+            <div class="metric-box">
+              <div class="metric-box-label">Mean Absolute Percentage Error (MAPE)</div>
+              <div class="metric-box-value" id="metric-mape">4.12%</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ====================================================
+           PANEL: User Control
+           ==================================================== -->
+      <div class="panel" id="panel-users">
+        <div class="grid-2col">
+          <div class="visual-card">
+            <div class="visual-card-title">
+              <span>Create Internal User Account</span>
+              <i class="fa-solid fa-user-plus text-muted"></i>
+            </div>
+            <form id="create-user-form" onsubmit="event.preventDefault(); handleCreateUser();">
+              <div class="form-grid" style="grid-template-columns:1fr; gap:16px;">
+                <div class="filter-group">
+                  <label for="user-name">Full Name</label>
+                  <input type="text" class="filter-input" id="user-name" required placeholder="e.g. Inspector R. Sharma">
+                </div>
+                <div class="filter-group">
+                  <label for="user-email">Government Email</label>
+                  <input type="email" class="filter-input" id="user-email" required placeholder="e.g. r.sharma@nic.in">
+                </div>
+                <div class="filter-group">
+                  <label for="user-role">Assigned Access Role</label>
+                  <select class="filter-select" id="user-role" required>
+                    <option value="analyst">Data Analyst</option>
+                    <option value="planning_officer">Resource Planning Officer</option>
+                    <option value="department_officer">Department Officer</option>
+                  </select>
+                </div>
+                <div class="filter-group">
+                  <label for="user-dept">Department / Office</label>
+                  <input type="text" class="filter-input" id="user-dept" required placeholder="e.g. UIDAI Regional Office West">
+                </div>
+                <div>
+                  <button type="submit" class="btn"><i class="fa-solid fa-user-check"></i> Provision User</button>
+                </div>
+              </div>
+            </form>
+          </div>
+
+          <div class="visual-card">
+            <div class="visual-card-title">
+              <span>Active Internal Personnel Registry</span>
+              <i class="fa-solid fa-address-book text-muted"></i>
+            </div>
+            <div style="overflow-x: auto;">
+              <table class="astra-table">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Role</th>
+                    <th>Dept</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="user-table-list">
+                  <!-- JS populated -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ====================================================
+           PANEL: Audit Logs
+           ==================================================== -->
+      <div class="panel" id="panel-audit">
+        <div class="filter-panel" style="background-color:rgba(255, 255, 255, 0.02); margin-bottom: 24px;">
+          <div class="filter-group">
+            <label for="audit-search">Search Action</label>
+            <input type="text" class="filter-input" id="audit-search" placeholder="e.g. forecast, upload">
+          </div>
+          <div class="filter-group">
+            <label for="audit-role-filter">User Role</label>
+            <select class="filter-select" id="audit-role-filter">
+              <option value="all">All Roles</option>
+              <option value="administrator">Administrator</option>
+              <option value="analyst">Data Analyst</option>
+              <option value="planning_officer">Resource Planning Officer</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="visual-card">
+          <div class="visual-card-title">
+            <span>Security & Audit Trails (Immutable Repository)</span>
+            <i class="fa-solid fa-clock text-muted"></i>
+          </div>
+          <p class="visual-card-desc">Tracks authentication events, user-level file uploads, forecasts runs, and permissions configuration.</p>
+          <div style="overflow-x: auto;">
+            <table class="astra-table">
+              <thead>
+                <tr>
+                  <th>Timestamp</th>
+                  <th>IP Address</th>
+                  <th>Personnel (Email)</th>
+                  <th>Role</th>
+                  <th>Action Log</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="audit-logs-rows">
+                <!-- JS populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- Toast Notification -->
+  <div class="toast" id="toast-notif">
+    <i class="fa-solid fa-circle-info"></i>
+    <span id="toast-text">Action completed successfully.</span>
+  </div>
+
+  <!-- ====================================================
+       Core App JavaScript Logic (Simulation Model)
+       ==================================================== -->
+  <script>
+    /* ----------------------------------------------------
+       State Database Mock Data (Hydration)
+       ---------------------------------------------------- */
+    const regionData = {
+      all: {
+        demographicsCount: "42,912,410",
+        biometricsCount: "18,349,201",
+        demographicTrends: [120, 135, 142, 160, 175, 192, 210, 230, 248, 255, 274, 290],
+        biometricTrends: [85, 90, 88, 102, 110, 115, 130, 125, 138, 142, 150, 155],
+        ageDistribution: [12, 24, 38, 18, 8],
+        genderSplit: [51, 48, 1],
+        biometricSplit: [65, 35],
+        allocations: {
+          enrollment_kits: { history: [100, 105, 112, 120, 122, 130, 132, 140, 145, 148, 152, 160], forecast: [165, 168, 172, 175, 180, 183], MAE: "6.2", RMSE: "8.5", MAPE: "3.2%" },
+          biometric_scanners: { history: [340, 360, 370, 385, 390, 410, 420, 435, 450, 462, 470, 485], forecast: [492, 501, 510, 520, 528, 535], MAE: "15.4", RMSE: "19.2", MAPE: "4.1%" },
+          personnel_units: { history: [800, 820, 840, 870, 890, 910, 940, 960, 990, 1010, 1040, 1070], forecast: [1085, 1100, 1118, 1135, 1150, 1170], MAE: "32.1", RMSE: "41.8", MAPE: "2.9%" }
+        }
+      },
+      maharashtra: {
+        demographicsCount: "12,410,892",
+        biometricsCount: "5,410,210",
+        demographicTrends: [35, 38, 41, 46, 50, 54, 58, 63, 67, 71, 75, 80],
+        biometricTrends: [22, 24, 23, 27, 29, 31, 35, 33, 37, 39, 41, 43],
+        ageDistribution: [10, 22, 42, 18, 8],
+        genderSplit: [52, 47, 1],
+        biometricSplit: [68, 32],
+        allocations: {
+          enrollment_kits: { history: [30, 32, 35, 38, 39, 42, 43, 46, 48, 50, 52, 55], forecast: [57, 59, 61, 63, 65, 67], MAE: "2.1", RMSE: "2.9", MAPE: "4.5%" },
+          biometric_scanners: { history: [110, 115, 118, 124, 126, 132, 135, 140, 145, 148, 151, 156], forecast: [159, 162, 165, 168, 171, 174], MAE: "5.3", RMSE: "7.1", MAPE: "3.4%" },
+          personnel_units: { history: [240, 246, 252, 261, 267, 273, 282, 288, 297, 303, 312, 321], forecast: [325, 330, 335, 340, 345, 350], MAE: "9.8", RMSE: "12.4", MAPE: "3.1%" }
+        }
+      },
+      uttar_pradesh: {
+        demographicsCount: "18,924,102",
+        biometricsCount: "7,890,142",
+        demographicTrends: [55, 60, 63, 71, 78, 85, 93, 102, 110, 114, 122, 130],
+        biometricTrends: [38, 40, 39, 45, 48, 50, 56, 54, 59, 61, 64, 66],
+        ageDistribution: [15, 27, 34, 16, 8],
+        genderSplit: [51, 48, 1],
+        biometricSplit: [62, 38],
+        allocations: {
+          enrollment_kits: { history: [45, 48, 52, 55, 56, 60, 61, 65, 67, 68, 70, 74], forecast: [76, 78, 80, 82, 84, 86], MAE: "3.2", RMSE: "4.1", MAPE: "4.9%" },
+          biometric_scanners: { history: [150, 158, 162, 169, 171, 180, 184, 191, 198, 203, 207, 214], forecast: [217, 221, 225, 229, 233, 237], MAE: "7.8", RMSE: "10.2", MAPE: "3.9%" },
+          personnel_units: { history: [360, 369, 378, 392, 401, 410, 423, 432, 446, 455, 468, 482], forecast: [488, 495, 503, 511, 518, 526], MAE: "14.2", RMSE: "18.6", MAPE: "3.0%" }
+        }
+      },
+      tamil_nadu: {
+        demographicsCount: "6,842,912",
+        biometricsCount: "2,842,109",
+        demographicTrends: [18, 20, 21, 24, 26, 28, 31, 33, 36, 37, 39, 41],
+        biometricTrends: [13, 14, 13, 16, 17, 18, 20, 19, 21, 22, 23, 24],
+        ageDistribution: [9, 20, 40, 20, 11],
+        genderSplit: [50, 49, 1],
+        biometricSplit: [67, 33],
+        allocations: {
+          enrollment_kits: { history: [15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26], forecast: [27, 27, 28, 28, 29, 29], MAE: "1.1", RMSE: "1.5", MAPE: "4.1%" },
+          biometric_scanners: { history: [50, 53, 55, 57, 58, 61, 62, 64, 66, 68, 69, 71], forecast: [72, 73, 74, 75, 76, 77], MAE: "2.1", RMSE: "2.8", MAPE: "3.1%" },
+          personnel_units: { history: [120, 123, 126, 131, 134, 137, 141, 144, 149, 152, 156, 160], forecast: [162, 164, 166, 168, 170, 172], MAE: "4.1", RMSE: "5.2", MAPE: "2.8%" }
+        }
+      },
+      karnataka: {
+        demographicsCount: "4,737,806",
+        biometricsCount: "2,206,740",
+        demographicTrends: [12, 17, 17, 19, 21, 25, 28, 32, 35, 33, 38, 39],
+        biometricTrends: [12, 12, 13, 14, 16, 16, 19, 19, 21, 20, 22, 22],
+        ageDistribution: [11, 23, 38, 20, 8],
+        genderSplit: [50, 49, 1],
+        biometricSplit: [64, 36],
+        allocations: {
+          enrollment_kits: { history: [10, 9, 8, 9, 8, 8, 10, 12, 7, 6, 5, 4], forecast: [4, 4, 3, 3, 2, 2], MAE: "1.4", RMSE: "1.9", MAPE: "12.1%" },
+          biometric_scanners: { history: [30, 34, 35, 35, 35, 37, 39, 40, 41, 43, 43, 44], forecast: [44, 45, 46, 47, 48, 49], MAE: "1.8", RMSE: "2.3", MAPE: "4.2%" },
+          personnel_units: { history: [80, 82, 84, 86, 88, 90, 92, 94, 96, 98, 100, 102], forecast: [103, 104, 105, 106, 107, 108], MAE: "2.4", RMSE: "3.1", MAPE: "2.5%" }
+        }
+      }
+    };
+
+    const districtList = {
+      maharashtra: ["Mumbai City", "Pune", "Nagpur", "Thane", "Nashik"],
+      uttar_pradesh: ["Lucknow", "Kanpur", "Varanasi", "Agra", "Ghaziabad"],
+      tamil_nadu: ["Chennai", "Coimbatore", "Madurai", "Salem", "Trichy"],
+      karnataka: ["Bengaluru Urban", "Mysuru", "Hubli-Dharwad", "Mangaluru", "Belagavi"]
+    };
+
+    let users = [
+      { name: "Admin Chief", email: "admin@uidai.gov.in", role: "Administrator", dept: "UIDAI Central Head Office" },
+      { name: "Ananya Sen", email: "a.sen@nic.in", role: "Data Analyst", dept: "National Analytics Cell" },
+      { name: "R. Subramanian", email: "r.subra@nic.in", role: "Resource Planning Officer", dept: "Regional Resource Division" },
+      { name: "Devendra Pratap", email: "d.pratap@gov.in", role: "Department Officer", dept: "Ministry of Electronics & IT" }
+    ];
+
+    let auditLogs = [
+      { timestamp: "2026-08-16 23:15", ip: "10.240.12.82", email: "admin@uidai.gov.in", role: "Administrator", action: "User session authenticated successfully via JWT gateway", status: "Success" },
+      { timestamp: "2026-08-16 22:50", ip: "10.240.45.101", email: "a.sen@nic.in", role: "Data Analyst", action: "Ingested dataset D-8021: mh_demographics_q2_2026.csv", status: "Success" },
+      { timestamp: "2026-08-16 21:05", ip: "10.240.80.32", email: "r.subra@nic.in", role: "Resource Planning Officer", action: "Initiated Prophet model fitting: Mumbai District — Enrollment Kits", status: "Success" },
+      { timestamp: "2026-08-16 19:42", ip: "10.240.10.15", email: "d.pratap@gov.in", role: "Department Officer", action: "Exported demographic report to PDF (Filters: National)", status: "Success" }
+    ];
+
+    /* ----------------------------------------------------
+       App Initialization
+       ---------------------------------------------------- */
+    let currentCharts = {};
+    let activeRole = 'administrator';
+    
+    document.addEventListener("DOMContentLoaded", () => {
+      // 1. Setup Role Switching Behavior
+      const roleSelector = document.getElementById("role-selector");
+      roleSelector.addEventListener("change", (e) => {
+        switchRole(e.target.value);
+      });
+      
+      // 2. Setup Panel Navigation
+      const navItems = document.querySelectorAll(".menu-item");
+      navItems.forEach(item => {
+        item.addEventListener("click", () => {
+          navItems.forEach(nav => nav.classList.remove("active"));
+          item.classList.add("active");
+          
+          const panelId = "panel-" + item.getAttribute("data-panel");
+          const panels = document.querySelectorAll(".panel");
+          panels.forEach(p => p.classList.remove("active"));
+          document.getElementById(panelId).classList.add("active");
+          
+          // Update header title
+          document.getElementById("bar-title").innerText = item.querySelector("span").innerText;
+          
+          // Log page navigation
+          addAuditLog(`Navigated to ${item.querySelector('span').innerText} module`);
+        });
+      });
+
+      // 3. Setup Region Filters
+      const stateSelect = document.getElementById("filter-state");
+      const districtSelect = document.getElementById("filter-district");
+      
+      stateSelect.addEventListener("change", (e) => {
+        const state = e.target.value;
+        // Populate districts
+        districtSelect.innerHTML = '<option value="all">All Districts</option>';
+        if (state === "all") {
+          districtSelect.disabled = true;
+        } else {
+          districtSelect.disabled = false;
+          districtList[state].forEach(dist => {
+            const opt = document.createElement("option");
+            opt.value = dist.toLowerCase().replace(" ", "_");
+            opt.innerText = dist;
+            districtSelect.appendChild(opt);
+          });
+        }
+        
+        // Refresh views
+        updateVisualizations();
+        addAuditLog(`Applied Region Filter: State = ${state.toUpperCase()}`);
+        showToast(`Loaded analytics for state: ${stateSelect.options[stateSelect.selectedIndex].text}`);
+      });
+
+      districtSelect.addEventListener("change", (e) => {
+        addAuditLog(`Applied Region Filter: District = ${districtSelect.options[districtSelect.selectedIndex].text}`);
+        showToast(`Filtered data by district: ${districtSelect.options[districtSelect.selectedIndex].text}`);
+      });
+
+      // 4. File Upload Ingestion Simulator
+      setupIngestionSimulator();
+
+      // 5. Forecast Trigger Setup
+      document.getElementById("generate-forecast-btn").addEventListener("click", runForecastMock);
+
+      // Hydrate tables
+      renderUserTable();
+      renderAuditLogs();
+      hydrateDemographicTable();
+      
+      // Load initial charts
+      switchRole('administrator'); // default role
+    });
+
+    /* ----------------------------------------------------
+       Role-Based Access Control (RBAC) System
+       ---------------------------------------------------- */
+    function switchRole(role) {
+      activeRole = role;
+      
+      // Update UI elements representing the user context
+      const nameNode = document.getElementById("user-display-name");
+      const roleNode = document.getElementById("user-display-role");
+      const avatarNode = document.getElementById("avatar-letters");
+      
+      const matchedUser = users.find(u => u.role.toLowerCase().replace(" ", "_") === role);
+      if (matchedUser) {
+        nameNode.innerText = matchedUser.name;
+        roleNode.innerText = matchedUser.role;
+        avatarNode.innerText = matchedUser.name.split(" ").map(n => n[0]).join("");
+      }
+
+      // Permissions Matrix Toggles
+      const navDatasets = document.getElementById("nav-datasets");
+      const navAnalytics = document.getElementById("nav-analytics");
+      const navForecasting = document.getElementById("nav-forecasting");
+      const navUsers = document.getElementById("nav-users");
+      const navAudit = document.getElementById("nav-audit");
+      const uploadModule = document.getElementById("upload-module");
+      const forecastBtn = document.getElementById("generate-forecast-btn");
+
+      // Hide all by default
+      navDatasets.classList.remove("hidden");
+      navAnalytics.classList.remove("hidden");
+      navForecasting.classList.remove("hidden");
+      navUsers.classList.remove("hidden");
+      navAudit.classList.remove("hidden");
+      uploadModule.style.display = "block";
+      forecastBtn.style.display = "inline-flex";
+
+      if (role === 'analyst') {
+        navUsers.classList.add("hidden");
+        navAudit.classList.add("hidden");
+      } else if (role === 'planning_officer') {
+        navUsers.classList.add("hidden");
+        navAudit.classList.add("hidden");
+        uploadModule.style.display = "none"; // read-only dataset view
+      } else if (role === 'department_officer') {
+        navUsers.classList.add("hidden");
+        navAudit.classList.add("hidden");
+        uploadModule.style.display = "none"; // read-only
+        forecastBtn.style.display = "none";  // read-only
+      }
+
+      // If active panel is hidden, fallback to dashboard
+      const activeNav = document.querySelector(".menu-item.active");
+      if (activeNav && activeNav.classList.contains("hidden")) {
+        document.querySelector(".menu-item[data-panel='dashboard']").click();
+      }
+
+      addAuditLog(`Auth authorization tokens swapped to Role: ${role.toUpperCase()}`);
+      showToast(`Switched access level to: ${role.replace("_", " ")}`);
+      updateVisualizations();
+    }
+
+    /* ----------------------------------------------------
+       Data Updates & Charts (Chart.js Engine)
+       ---------------------------------------------------- */
+    function updateVisualizations() {
+      const activeRegion = document.getElementById("filter-state").value;
+      const data = regionData[activeRegion];
+      
+      // Update KPI figures
+      document.getElementById("kpi-demographics").innerText = data.demographicsCount;
+      document.getElementById("kpi-biometrics").innerText = data.biometricsCount;
+      
+      // Trigger a special warning warning indicator for Karnataka Kits allocation
+      if (activeRegion === 'karnataka') {
+        document.getElementById("kpi-gaps").innerText = "1";
+        document.getElementById("kpi-gaps").parentNode.querySelector(".kpi-change").innerHTML = 
+          `<i class="fa-solid fa-arrow-down"></i> Kits allocation critical drop`;
+      } else {
+        document.getElementById("kpi-gaps").innerText = "0";
+        document.getElementById("kpi-gaps").parentNode.querySelector(".kpi-change").innerHTML = 
+          `<i class="fa-solid fa-check"></i> Normal threshold`;
+      }
+
+      renderDashboardTrendChart(data);
+      renderDashboardAgeChart(data);
+      renderAnalyticsGenderChart(data);
+      renderAnalyticsBiometricChart(data);
+      renderForecastingChart();
+    }
+
+    function renderDashboardTrendChart(data) {
+      if (currentCharts.dashboardTrend) currentCharts.dashboardTrend.destroy();
+      
+      const ctx = document.getElementById("dashboard-trend-chart").getContext("2d");
+      currentCharts.dashboardTrend = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+          datasets: [
+            {
+              label: 'Demographics (x10k)',
+              data: data.demographicTrends,
+              borderColor: '#5bc0be',
+              backgroundColor: 'rgba(91, 192, 190, 0.1)',
+              fill: true,
+              tension: 0.3
+            },
+            {
+              label: 'Biometrics (x10k)',
+              data: data.biometricTrends,
+              borderColor: '#3a506b',
+              backgroundColor: 'rgba(58, 80, 107, 0.1)',
+              fill: true,
+              tension: 0.3
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { labels: { color: '#a0aec0', font: { family: 'Inter' } } }
+          },
+          scales: {
+            x: { grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#a0aec0' } },
+            y: { grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#a0aec0' } }
+          }
+        }
+      });
+    }
+
+    function renderDashboardAgeChart(data) {
+      if (currentCharts.dashboardAge) currentCharts.dashboardAge.destroy();
+      
+      const ctx = document.getElementById("dashboard-age-chart").getContext("2d");
+      currentCharts.dashboardAge = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: ['0-5 yrs', '5-18 yrs', '18-35 yrs', '35-60 yrs', '60+ yrs'],
+          datasets: [{
+            label: 'Percent of Region',
+            data: data.ageDistribution,
+            backgroundColor: ['#5bc0be', '#3a506b', '#1c2541', '#f59e0b', '#10b981'],
+            borderWidth: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false }
+          },
+          scales: {
+            x: { grid: { display: false }, ticks: { color: '#a0aec0' } },
+            y: { grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#a0aec0' } }
+          }
+        }
+      });
+    }
+
+    function renderAnalyticsGenderChart(data) {
+      if (currentCharts.analyticsGender) currentCharts.analyticsGender.destroy();
+      
+      const ctx = document.getElementById("analytics-gender-chart").getContext("2d");
+      currentCharts.analyticsGender = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: ['Male', 'Female', 'Third Gender / Other'],
+          datasets: [{
+            data: data.genderSplit,
+            backgroundColor: ['#5bc0be', '#f59e0b', '#3a506b'],
+            borderWidth: 1,
+            borderColor: '#1c2541'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'bottom', labels: { color: '#a0aec0' } }
+          }
+        }
+      });
+    }
+
+    function renderAnalyticsBiometricChart(data) {
+      if (currentCharts.analyticsBiometric) currentCharts.analyticsBiometric.destroy();
+      
+      const ctx = document.getElementById("analytics-biometric-chart").getContext("2d");
+      currentCharts.analyticsBiometric = new Chart(ctx, {
+        type: 'pie',
+        data: {
+          labels: ['New Enrollments', 'Biometric Updates'],
+          datasets: [{
+            data: data.biometricSplit,
+            backgroundColor: ['#10b981', '#3b82f6'],
+            borderWidth: 1,
+            borderColor: '#1c2541'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'bottom', labels: { color: '#a0aec0' } }
+          }
+        }
+      });
+    }
+
+    function renderForecastingChart() {
+      if (currentCharts.forecastingChart) currentCharts.forecastingChart.destroy();
+      
+      const activeRegion = document.getElementById("filter-state").value;
+      const resourceType = document.getElementById("forecast-resource").value;
+      const horizon = parseInt(document.getElementById("forecast-horizon").value);
+      
+      const allocData = regionData[activeRegion].allocations[resourceType];
+      
+      // Generate chart points
+      const historyLabels = ['Sep 25', 'Oct 25', 'Nov 25', 'Dec 25', 'Jan 26', 'Feb 26', 'Mar 26', 'Apr 26', 'May 26', 'Jun 26', 'Jul 26', 'Aug 26'];
+      const forecastLabels = ['Sep 26', 'Oct 26', 'Nov 26', 'Dec 26', 'Jan 27', 'Feb 27'].slice(0, horizon);
+      
+      const labels = [...historyLabels, ...forecastLabels];
+      
+      // Historical Series
+      const historyPoints = [...allocData.history];
+      
+      // Future Series
+      const forecastPoints = Array(12).fill(null);
+      forecastPoints[11] = allocData.history[11]; // connect the dots
+      forecastPoints.push(...allocData.forecast.slice(0, horizon));
+
+      // Bounds Series
+      const lowerBounds = Array(12).fill(null);
+      const upperBounds = Array(12).fill(null);
+      lowerBounds[11] = allocData.history[11];
+      upperBounds[11] = allocData.history[11];
+      
+      allocData.forecast.slice(0, horizon).forEach((val, idx) => {
+        const uncertainty = val * 0.08 * (idx + 1); // error accumulates
+        lowerBounds.push(val - uncertainty);
+        upperBounds.push(val + uncertainty);
+      });
+
+      // Update KPI boxes
+      document.getElementById("metric-mae").innerText = allocData.MAE;
+      document.getElementById("metric-rmse").innerText = allocData.RMSE;
+      document.getElementById("metric-mape").innerText = allocData.MAPE;
+
+      const ctx = document.getElementById("forecast-main-chart").getContext("2d");
+      currentCharts.forecastingChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: 'Historical Allocation',
+              data: historyPoints,
+              borderColor: '#5bc0be',
+              borderWidth: 2,
+              tension: 0.2
+            },
+            {
+              label: 'Prophet Demand Forecast',
+              data: forecastPoints,
+              borderColor: '#f59e0b',
+              borderDash: [5, 5],
+              borderWidth: 2,
+              tension: 0.2
+            },
+            {
+              label: 'Upper Confidence Limit (95%)',
+              data: upperBounds,
+              borderColor: 'rgba(245, 158, 11, 0.15)',
+              backgroundColor: 'rgba(245, 158, 11, 0.05)',
+              fill: '+1',
+              pointRadius: 0,
+              tension: 0.2
+            },
+            {
+              label: 'Lower Confidence Limit (95%)',
+              data: lowerBounds,
+              borderColor: 'rgba(245, 158, 11, 0.15)',
+              fill: false,
+              pointRadius: 0,
+              tension: 0.2
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              labels: {
+                color: '#a0aec0',
+                filter: function(item, chart) {
+                  // hide limits in legend
+                  return !item.text.includes('Limit');
+                }
+              }
+            }
+          },
+          scales: {
+            x: { grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#a0aec0' } },
+            y: { grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#a0aec0' } }
+          }
+        }
+      });
+    }
+
+    /* ----------------------------------------------------
+       Forecasting Simulation Run
+       ---------------------------------------------------- */
+    function runForecastMock() {
+      const forecastBtn = document.getElementById("generate-forecast-btn");
+      forecastBtn.disabled = true;
+      forecastBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Communicating with Python ML microservice...`;
+      
+      const region = document.getElementById("filter-state").options[document.getElementById("filter-state").selectedIndex].text;
+      const resource = document.getElementById("forecast-resource").options[document.getElementById("forecast-resource").selectedIndex].text;
+
+      setTimeout(() => {
+        forecastBtn.disabled = false;
+        forecastBtn.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles"></i> Run Prophet Forecast`;
+        
+        updateVisualizations();
+        addAuditLog(`Successfully generated 95% CI forecast for [${region} - ${resource}] using Python Prophet service`, "Success");
+        showToast("Prophet forecast generated successfully!");
+      }, 1500);
+    }
+
+    /* ----------------------------------------------------
+       File Ingestion System
+       ---------------------------------------------------- */
+    function setupIngestionSimulator() {
+      const dropzone = document.getElementById("dropzone");
+      const fileInput = document.getElementById("file-selector-input");
+      const progressContainer = document.getElementById("upload-progress-container");
+      const progressBar = document.getElementById("ingest-progress");
+      const progressStatus = document.getElementById("upload-status");
+      const progressDetails = document.getElementById("upload-details");
+      const progressFilename = document.getElementById("upload-filename");
+
+      dropzone.addEventListener("click", () => fileInput.click());
+      
+      fileInput.addEventListener("change", (e) => {
+        if (e.target.files.length > 0) {
+          simulateUpload(e.target.files[0]);
+        }
+      });
+
+      // Drag over actions
+      dropzone.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        dropzone.style.borderColor = "var(--accent-hover)";
+        dropzone.style.background = "rgba(91, 192, 190, 0.1)";
+      });
+
+      dropzone.addEventListener("dragleave", () => {
+        dropzone.style.borderColor = "rgba(91, 192, 190, 0.3)";
+        dropzone.style.background = "rgba(28, 37, 65, 0.4)";
+      });
+
+      dropzone.addEventListener("drop", (e) => {
+        e.preventDefault();
+        dropzone.style.borderColor = "rgba(91, 192, 190, 0.3)";
+        dropzone.style.background = "rgba(28, 37, 65, 0.4)";
+        if (e.dataTransfer.files.length > 0) {
+          simulateUpload(e.dataTransfer.files[0]);
+        }
+      });
+
+      function simulateUpload(file) {
+        if (!file.name.endsWith(".csv")) {
+          showToast("Validation Error: Only CSV files are supported!");
+          addAuditLog(`Rejected upload of ${file.name}: Invalid extension`, "Failed");
+          return;
+        }
+
+        // Show Progress Container
+        progressContainer.style.display = "block";
+        progressFilename.innerText = file.name;
+        progressStatus.innerText = "Uploading";
+        progressStatus.className = "status-badge uploaded";
+        progressBar.style.width = "0%";
+        progressDetails.innerText = "Transferring data blocks...";
+
+        // Step 1: Uploading Simulation (0.5s)
+        let percent = 0;
+        let uploadInterval = setInterval(() => {
+          percent += 20;
+          progressBar.style.width = percent + "%";
+          if (percent >= 100) {
+            clearInterval(uploadInterval);
+            triggerValidation();
+          }
+        }, 100);
+
+        function triggerValidation() {
+          progressStatus.innerText = "Validating";
+          progressStatus.className = "status-badge processing";
+          progressBar.style.width = "0%";
+          progressDetails.innerText = "Verifying variable headers and state code ranges...";
+
+          let valPercent = 0;
+          let valInterval = setInterval(() => {
+            valPercent += 25;
+            progressBar.style.width = valPercent + "%";
+            if (valPercent >= 100) {
+              clearInterval(valInterval);
+              triggerProcessing();
+            }
+          }, 150);
+        }
+
+        function triggerProcessing() {
+          progressStatus.innerText = "Processing";
+          progressStatus.className = "status-badge processing";
+          progressBar.style.width = "0%";
+          progressDetails.innerText = "Aggregating indices by demographic groups...";
+
+          let procPercent = 0;
+          let procInterval = setInterval(() => {
+            procPercent += 10;
+            progressBar.style.width = procPercent + "%";
+            if (procPercent >= 100) {
+              clearInterval(procInterval);
+              completeIngest();
+            }
+          }, 100);
+        }
+
+        function completeIngest() {
+          progressBar.style.width = "100%";
+          
+          // Inject row to history table
+          const list = document.getElementById("dataset-history-list");
+          const row = document.createElement("tr");
+          const isCorrupt = file.name.includes("corrupt") || file.name.includes("bad");
+          
+          const newId = "D-" + (8018 + list.children.length);
+          
+          if (isCorrupt) {
+            progressStatus.innerText = "Failed";
+            progressStatus.className = "status-badge failed";
+            progressDetails.innerText = "Ingestion stopped: Missing required schema headers.";
+            showToast(`Ingestion failed for: ${file.name}`);
+            
+            row.innerHTML = `
+              <td class="text-code">${newId}</td>
+              <td>${file.name}</td>
+              <td>Demographics</td>
+              <td>0</td>
+              <td class="text-code">0.0%</td>
+              <td>${new Date().toISOString().replace('T', ' ').substring(0, 16)}</td>
+              <td><span class="status-badge failed"><i class="fa-solid fa-circle-xmark"></i> Failed Schema</span></td>
+            `;
+            addAuditLog(`Schema validation failed on ingestion for file: ${file.name}`, "Failed");
+          } else {
+            progressStatus.innerText = "Ready";
+            progressStatus.className = "status-badge ready";
+            progressDetails.innerText = "Aggregated dataset persisted successfully to MongoDB.";
+            showToast(`Successfully ingested: ${file.name}`);
+            
+            row.innerHTML = `
+              <td class="text-code">${newId}</td>
+              <td>${file.name}</td>
+              <td>Demographics</td>
+              <td>124,500</td>
+              <td class="text-code">99.9%</td>
+              <td>${new Date().toISOString().replace('T', ' ').substring(0, 16)}</td>
+              <td><span class="status-badge ready"><i class="fa-solid fa-circle-check"></i> Ready</span></td>
+            `;
+            addAuditLog(`Successfully ingested dataset ${newId} (${file.name}): 124,500 rows aggregated`, "Success");
+          }
+          
+          list.insertBefore(row, list.firstChild);
+        }
+      }
+    }
+
+    /* ----------------------------------------------------
+       Personnel Control List Panel
+       ---------------------------------------------------- */
+    function renderUserTable() {
+      const list = document.getElementById("user-table-list");
+      list.innerHTML = "";
+      
+      users.forEach((u, index) => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>
+            <div style="font-weight:600;">${u.name}</div>
+            <div style="font-size:0.8rem; color:var(--text-muted);">${u.email}</div>
+          </td>
+          <td><span class="text-code">${u.role}</span></td>
+          <td>${u.dept}</td>
+          <td>
+            <button class="btn btn-secondary" style="padding:6px 12px; font-size:0.8rem; color:var(--status-failed);" onclick="deactivateUser(${index})">
+              Deactivate
+            </button>
+          </td>
+        `;
+        list.appendChild(row);
+      });
+    }
+
+    function handleCreateUser() {
+      const name = document.getElementById("user-name").value;
+      const email = document.getElementById("user-email").value;
+      const roleSelect = document.getElementById("user-role");
+      const role = roleSelect.options[roleSelect.selectedIndex].text;
+      const dept = document.getElementById("user-dept").value;
+
+      users.push({ name, email, role, dept });
+      addAuditLog(`Provisioned user account for ${name} (${email}) with role ${role}`, "Success");
+      showToast(`User account created for ${name}`);
+      
+      // Clear forms
+      document.getElementById("user-name").value = "";
+      document.getElementById("user-email").value = "";
+      document.getElementById("user-dept").value = "";
+      
+      renderUserTable();
+    }
+
+    function deactivateUser(index) {
+      const user = users[index];
+      users.splice(index, 1);
+      addAuditLog(`Deactivated access tokens & account for: ${user.name} (${user.email})`, "Success");
+      showToast(`Account deactivated for ${user.name}`);
+      renderUserTable();
+    }
+
+    /* ----------------------------------------------------
+       Audit Trails Tracker
+       ---------------------------------------------------- */
+    function renderAuditLogs() {
+      const tbody = document.getElementById("audit-logs-rows");
+      tbody.innerHTML = "";
+      
+      auditLogs.forEach(log => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td class="audit-meta">${log.timestamp}</td>
+          <td class="audit-meta">${log.ip}</td>
+          <td>${log.email}</td>
+          <td><span class="text-code" style="font-size:0.75rem;">${log.role}</span></td>
+          <td>${log.action}</td>
+          <td>
+            <span class="status-badge ${log.status.toLowerCase() === 'success' ? 'ready' : 'failed'}" style="padding: 2px 8px; font-size: 0.75rem;">
+              ${log.status}
+            </span>
+          </td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+
+    function addAuditLog(action, status = "Success") {
+      const email = users.find(u => u.role.toLowerCase().replace(" ", "_") === activeRole)?.email || "system@uidai.gov.in";
+      const roleName = activeRole.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+      
+      const newLog = {
+        timestamp: new Date().toISOString().replace('T', ' ').substring(0, 16),
+        ip: "10.240.12." + Math.floor(Math.random() * 254 + 1),
+        email: email,
+        role: roleName,
+        action: action,
+        status: status
+      };
+      
+      auditLogs.unshift(newLog);
+      renderAuditLogs();
+    }
+
+    /* ----------------------------------------------------
+       Helper Components & UI Feedbacks
+       ---------------------------------------------------- */
+    function showToast(text) {
+      const toast = document.getElementById("toast-notif");
+      document.getElementById("toast-text").innerText = text;
+      toast.classList.add("show");
+      setTimeout(() => {
+        toast.classList.remove("show");
+      }, 3000);
+    }
+
+    function hydrateDemographicTable() {
+      const rows = [
+        { age: "0-5 yrs (Infant)", male: "1,240,105", female: "1,180,942", other: "10,210", total: "2,431,257", growth: "+1.2%" },
+        { age: "5-18 yrs (School)", male: "4,590,820", female: "4,302,112", other: "32,900", total: "8,925,832", growth: "+2.4%" },
+        { age: "18-35 yrs (Youth)", male: "7,820,490", female: "7,249,102", other: "89,102", total: "15,158,694", growth: "+8.6%" },
+        { age: "35-60 yrs (Working)", male: "6,910,210", female: "6,410,290", other: "41,090", total: "13,361,590", growth: "+4.1%" },
+        { age: "60+ yrs (Senior)", male: "1,540,119", female: "1,440,912", other: "12,900", total: "2,993,931", growth: "+0.8%" }
+      ];
+      
+      const tbody = document.getElementById("demographic-age-table-rows");
+      tbody.innerHTML = "";
+      rows.forEach(r => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td><strong>${r.age}</strong></td>
+          <td class="text-code">${r.male}</td>
+          <td class="text-code">${r.female}</td>
+          <td class="text-code">${r.other}</td>
+          <td class="text-code" style="font-weight:600;">${r.total}</td>
+          <td style="color:var(--status-ready); font-weight:600;">${r.growth}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+  </script>
+</body>
+</html>
