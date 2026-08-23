@@ -1,0 +1,129 @@
+# =============================================================
+# ASTRA — Aadhaar Statistical Trends & Resource Analytics
+# .gitignore — root level, covers entire monorepo
+# =============================================================
+
+
+# -------------------------------------------------------------
+# Environment & Secrets  (NEVER commit these)
+# -------------------------------------------------------------
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.cert
+*.p12
+
+
+# -------------------------------------------------------------
+# Node.js / npm  (frontend + backend)
+# -------------------------------------------------------------
+node_modules/
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+.npm
+.yarn/
+
+
+# -------------------------------------------------------------
+# Vite / Frontend build output
+# -------------------------------------------------------------
+frontend/dist/
+frontend/build/
+frontend/.vite/
+frontend/node_modules/
+
+
+# -------------------------------------------------------------
+# Backend runtime-generated directories
+# -------------------------------------------------------------
+
+# File uploads stored on disk by multer (backend/routes/datasets.js)
+backend/uploads/
+
+# Backend node_modules if ever installed locally
+backend/node_modules/
+backend/package-lock.json
+
+
+# -------------------------------------------------------------
+# Python / FastAPI  (ml-service)
+# -------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+
+# Virtual environments
+venv/
+.venv/
+env/
+.env/
+ENV/
+
+# pip / poetry / conda
+pip-log.txt
+pip-delete-this-directory.txt
+*.egg-info/
+*.egg
+dist/
+build/
+.eggs/
+site-packages/
+
+# Prophet / Stan model cache
+prophet_cache/
+ml-service/__pycache__/
+ml-service/*.pyc
+
+# Jupyter notebooks checkpoints
+.ipynb_checkpoints/
+
+
+# -------------------------------------------------------------
+# Logs
+# -------------------------------------------------------------
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+
+# -------------------------------------------------------------
+# OS-generated junk
+# -------------------------------------------------------------
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+
+# -------------------------------------------------------------
+# Editor / IDE metadata
+# -------------------------------------------------------------
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+
+# -------------------------------------------------------------
+# Scratch / temporary files committed by mistake
+# -------------------------------------------------------------
+test.txt
+*.tmp
+*.bak

@@ -1,13 +1,15 @@
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
+import { canAccessPage, getDefaultTab } from '../utils/permissions';
 
 const Sidebar = ({ activeTab, setActiveTab }) => {
   const { user, setUser } = useAuth();
 
   const handleRoleChange = (e) => {
     const roleValue = e.target.value;
-    
-    // Simulate updating user profile
+
+    // Permission arrays use EXACT strings from backend/routes/*.js authorize() calls.
+    // Role strings match backend/models/Role.js enum exactly.
     let role = 'Administrator';
     let permissions = ['manage_users', 'view_audit_logs', 'upload_datasets', 'manage_datasets', 'generate_forecasts'];
     let email = 'admin@uidai.gov.in';
@@ -32,15 +34,14 @@ const Sidebar = ({ activeTab, setActiveTab }) => {
       role,
       permissions
     };
-    
+
     localStorage.setItem('astra_user', JSON.stringify(updatedUser));
     setUser(updatedUser);
 
-    // Reset tab if target is hidden
-    if (roleValue !== 'administrator') {
-      if (activeTab === 'users' || activeTab === 'audit') {
-        setActiveTab('dashboard');
-      }
+    // If the currently active tab is not accessible under the new role, redirect to the
+    // first valid tab for that role. Covers all tabs — not just 'users' and 'audit'.
+    if (!canAccessPage(updatedUser, activeTab)) {
+      setActiveTab(getDefaultTab(updatedUser));
     }
   };
 
@@ -54,65 +55,78 @@ const Sidebar = ({ activeTab, setActiveTab }) => {
         <i className="fa-solid fa-chart-line"></i>
         <h1>ASTRA</h1>
       </div>
-      
+
       <ul className="sidebar-menu">
-        <li 
+        {/* Dashboard — always visible to all authenticated users */}
+        <li
           className={`menu-item ${activeTab === 'dashboard' ? 'active' : ''}`}
           onClick={() => setActiveTab('dashboard')}
         >
           <i className="fa-solid fa-house"></i>
           <span>Dashboard</span>
         </li>
-        
-        <li 
-          className={`menu-item ${activeTab === 'datasets' ? 'active' : ''}`}
-          onClick={() => setActiveTab('datasets')}
-        >
-          <i className="fa-solid fa-database"></i>
-          <span>Datasets</span>
-        </li>
 
-        <li 
-          className={`menu-item ${activeTab === 'analytics' ? 'active' : ''}`}
-          onClick={() => setActiveTab('analytics')}
-        >
-          <i className="fa-solid fa-chart-pie"></i>
-          <span>Demographic Analytics</span>
-        </li>
+        {/* Datasets — Admin + Data Analyst only */}
+        {canAccessPage(user, 'datasets') && (
+          <li
+            className={`menu-item ${activeTab === 'datasets' ? 'active' : ''}`}
+            onClick={() => setActiveTab('datasets')}
+          >
+            <i className="fa-solid fa-database"></i>
+            <span>Datasets</span>
+          </li>
+        )}
 
-        <li 
-          className={`menu-item ${activeTab === 'forecasting' ? 'active' : ''}`}
-          onClick={() => setActiveTab('forecasting')}
-        >
-          <i className="fa-solid fa-bullseye"></i>
-          <span>Resource Forecasting</span>
-        </li>
+        {/* Analytics — Admin + Data Analyst only */}
+        {canAccessPage(user, 'analytics') && (
+          <li
+            className={`menu-item ${activeTab === 'analytics' ? 'active' : ''}`}
+            onClick={() => setActiveTab('analytics')}
+          >
+            <i className="fa-solid fa-chart-pie"></i>
+            <span>Demographic Analytics</span>
+          </li>
+        )}
 
-        {user?.role === 'Administrator' && (
-          <>
-            <li 
-              className={`menu-item ${activeTab === 'users' ? 'active' : ''}`}
-              onClick={() => setActiveTab('users')}
-            >
-              <i className="fa-solid fa-users-gear"></i>
-              <span>User Control</span>
-            </li>
-            <li 
-              className={`menu-item ${activeTab === 'audit' ? 'active' : ''}`}
-              onClick={() => setActiveTab('audit')}
-            >
-              <i className="fa-solid fa-shield-halved"></i>
-              <span>Audit Logs</span>
-            </li>
-          </>
+        {/* Forecasting — Admin + Resource Planning Officer only */}
+        {canAccessPage(user, 'forecasting') && (
+          <li
+            className={`menu-item ${activeTab === 'forecasting' ? 'active' : ''}`}
+            onClick={() => setActiveTab('forecasting')}
+          >
+            <i className="fa-solid fa-bullseye"></i>
+            <span>Resource Forecasting</span>
+          </li>
+        )}
+
+        {/* Users — Admin only */}
+        {canAccessPage(user, 'users') && (
+          <li
+            className={`menu-item ${activeTab === 'users' ? 'active' : ''}`}
+            onClick={() => setActiveTab('users')}
+          >
+            <i className="fa-solid fa-users-gear"></i>
+            <span>User Control</span>
+          </li>
+        )}
+
+        {/* Audit Logs — Admin only */}
+        {canAccessPage(user, 'audit') && (
+          <li
+            className={`menu-item ${activeTab === 'audit' ? 'active' : ''}`}
+            onClick={() => setActiveTab('audit')}
+          >
+            <i className="fa-solid fa-shield-halved"></i>
+            <span>Audit Logs</span>
+          </li>
         )}
       </ul>
 
       <div className="sidebar-footer">
         <div className="role-indicator">
           <span className="role-label">Logged Access Level</span>
-          <select 
-            className="role-select" 
+          <select
+            className="role-select"
             value={currentRoleValue}
             onChange={handleRoleChange}
           >

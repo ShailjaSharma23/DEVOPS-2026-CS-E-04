@@ -21,11 +21,21 @@ export const AuthProvider = ({ children }) => {
           if (response.ok) {
             const data = await response.json();
             setUser(data.user);
+          } else if (response.status >= 500) {
+            // 5xx = server/proxy unavailable (e.g. Vite returns 502 when backend is offline).
+            // This is NOT an auth failure — treat it as offline and fall back to localStorage,
+            // the same way the catch block handles a thrown network error.
+            console.warn('Backend API offline (server error). Operating in simulation fallback mode.');
+            const storedUser = localStorage.getItem('astra_user');
+            if (storedUser) {
+              setUser(JSON.parse(storedUser));
+            }
           } else {
-            // Invalidate session
+            // Genuine auth failure (401, 403): token is invalid or expired — invalidate session.
             logout();
           }
         } catch (err) {
+          // fetch() threw — complete network failure (ECONNREFUSED etc.)
           console.warn('Backend API offline. Operating in simulation fallback mode.');
           // Offline mock resolution based on storage
           const storedUser = localStorage.getItem('astra_user');
