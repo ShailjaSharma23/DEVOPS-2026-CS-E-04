@@ -10,14 +10,6 @@
  *
  * Role strings match backend/models/Role.js enum exactly:
  *   'Administrator', 'Data Analyst', 'Resource Planning Officer', 'Department Officer'
- *
- * Analytics: backend uses protect-only (no authorize), so any authenticated user can access
- * the analytics API. The frontend gates the page to Admin + Data Analyst by requiring
- * 'upload_datasets', which Analysts hold. This is a frontend UX gate only and does NOT
- * modify backend behavior.
- *
- * Forecasting page: the "Run Forecast" action requires generate_forecasts. The whole page
- * is gated to match the intended matrix (Resource Planning Officer + Admin only).
  */
 export const PAGE_PERMISSIONS = {
   dashboard:   [],                                         // All authenticated users
@@ -26,6 +18,15 @@ export const PAGE_PERMISSIONS = {
   forecasting: ['generate_forecasts'],                     // Admin + Resource Planning Officer
   users:       ['manage_users'],                           // Admin only
   audit:       ['view_audit_logs'],                        // Admin only
+};
+
+export const PAGE_ROLES_MAP = {
+  dashboard:   ['Administrator', 'Data Analyst', 'Resource Planning Officer', 'Department Officer'],
+  datasets:    ['Administrator', 'Data Analyst'],
+  analytics:   ['Administrator', 'Data Analyst'],
+  forecasting: ['Administrator', 'Resource Planning Officer'],
+  users:       ['Administrator'],
+  audit:       ['Administrator'],
 };
 
 /**
@@ -49,8 +50,17 @@ export const canAccessPage = (user, page) => {
 };
 
 /**
+ * Returns the array of role names authorized to access a given page tab.
+ * @param {string} page
+ * @returns {string[]}
+ */
+export const getAuthorizedRolesForPage = (page) => {
+  return PAGE_ROLES_MAP[page] || [];
+};
+
+/**
  * Returns the first tab the user is permitted to access.
- * Used to redirect when the current tab becomes unauthorized after a role change.
+ * Used to redirect when the current tab becomes unauthorized.
  * Dashboard is always accessible to authenticated users, so this always returns a valid tab.
  * @param {object|null} user
  * @returns {string}
