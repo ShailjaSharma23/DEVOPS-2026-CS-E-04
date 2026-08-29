@@ -1,143 +1,131 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { canAccessPage, getDefaultTab } from '../utils/permissions';
+import { canAccessPage, getAuthorizedRolesForPage } from '../utils/permissions';
+import RoleSwitchModal from './RoleSwitchModal';
+
+const MENU_ITEMS = [
+  { id: 'dashboard', label: 'Dashboard', icon: 'fa-house' },
+  { id: 'datasets', label: 'Datasets', icon: 'fa-database' },
+  { id: 'analytics', label: 'Demographic Analytics', icon: 'fa-chart-pie' },
+  { id: 'forecasting', label: 'Resource Forecasting', icon: 'fa-bullseye' },
+  { id: 'users', label: 'User Control', icon: 'fa-users-gear' },
+  { id: 'audit', label: 'Audit Logs', icon: 'fa-shield-halved' }
+];
 
 const Sidebar = ({ activeTab, setActiveTab }) => {
-  const { user, setUser } = useAuth();
+  const { user, logout } = useAuth();
+  const [hoveredLockedTab, setHoveredLockedTab] = useState(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedTargetRole, setSelectedTargetRole] = useState(null);
 
-  const handleRoleChange = (e) => {
-    const roleValue = e.target.value;
-
-    // Permission arrays use EXACT strings from backend/routes/*.js authorize() calls.
-    // Role strings match backend/models/Role.js enum exactly.
-    let role = 'Administrator';
-    let permissions = ['manage_users', 'view_audit_logs', 'upload_datasets', 'manage_datasets', 'generate_forecasts'];
-    let email = 'admin@uidai.gov.in';
-
-    if (roleValue === 'analyst') {
-      role = 'Data Analyst';
-      permissions = ['upload_datasets'];
-      email = 'a.sen@nic.in';
-    } else if (roleValue === 'planning_officer') {
-      role = 'Resource Planning Officer';
-      permissions = ['generate_forecasts'];
-      email = 'r.subra@nic.in';
-    } else if (roleValue === 'department_officer') {
-      role = 'Department Officer';
-      permissions = [];
-      email = 'd.pratap@gov.in';
-    }
-
-    const updatedUser = {
-      ...user,
-      email,
-      role,
-      permissions
-    };
-
-    localStorage.setItem('astra_user', JSON.stringify(updatedUser));
-    setUser(updatedUser);
-
-    // If the currently active tab is not accessible under the new role, redirect to the
-    // first valid tab for that role. Covers all tabs — not just 'users' and 'audit'.
-    if (!canAccessPage(updatedUser, activeTab)) {
-      setActiveTab(getDefaultTab(updatedUser));
-    }
+  const handleLockedItemClick = (item) => {
+    const roles = getAuthorizedRolesForPage(item.id);
+    const targetRole = roles.find(r => r !== 'Administrator') || roles[0] || 'Administrator';
+    setSelectedTargetRole(targetRole);
+    setModalOpen(true);
   };
 
-  const currentRoleValue = user?.role === 'Data Analyst' ? 'analyst' :
-                           user?.role === 'Resource Planning Officer' ? 'planning_officer' :
-                           user?.role === 'Department Officer' ? 'department_officer' : 'administrator';
+  const handleOpenRoleSwitch = (roleName) => {
+    setSelectedTargetRole(roleName);
+    setModalOpen(true);
+  };
+
+  const handleConfirmSignOut = () => {
+    setModalOpen(false);
+    logout();
+  };
 
   return (
-    <aside className="sidebar">
-      <div className="sidebar-header">
-        <i className="fa-solid fa-chart-line"></i>
-        <h1>ASTRA</h1>
-      </div>
-
-      <ul className="sidebar-menu">
-        {/* Dashboard — always visible to all authenticated users */}
-        <li
-          className={`menu-item ${activeTab === 'dashboard' ? 'active' : ''}`}
-          onClick={() => setActiveTab('dashboard')}
-        >
-          <i className="fa-solid fa-house"></i>
-          <span>Dashboard</span>
-        </li>
-
-        {/* Datasets — Admin + Data Analyst only */}
-        {canAccessPage(user, 'datasets') && (
-          <li
-            className={`menu-item ${activeTab === 'datasets' ? 'active' : ''}`}
-            onClick={() => setActiveTab('datasets')}
-          >
-            <i className="fa-solid fa-database"></i>
-            <span>Datasets</span>
-          </li>
-        )}
-
-        {/* Analytics — Admin + Data Analyst only */}
-        {canAccessPage(user, 'analytics') && (
-          <li
-            className={`menu-item ${activeTab === 'analytics' ? 'active' : ''}`}
-            onClick={() => setActiveTab('analytics')}
-          >
-            <i className="fa-solid fa-chart-pie"></i>
-            <span>Demographic Analytics</span>
-          </li>
-        )}
-
-        {/* Forecasting — Admin + Resource Planning Officer only */}
-        {canAccessPage(user, 'forecasting') && (
-          <li
-            className={`menu-item ${activeTab === 'forecasting' ? 'active' : ''}`}
-            onClick={() => setActiveTab('forecasting')}
-          >
-            <i className="fa-solid fa-bullseye"></i>
-            <span>Resource Forecasting</span>
-          </li>
-        )}
-
-        {/* Users — Admin only */}
-        {canAccessPage(user, 'users') && (
-          <li
-            className={`menu-item ${activeTab === 'users' ? 'active' : ''}`}
-            onClick={() => setActiveTab('users')}
-          >
-            <i className="fa-solid fa-users-gear"></i>
-            <span>User Control</span>
-          </li>
-        )}
-
-        {/* Audit Logs — Admin only */}
-        {canAccessPage(user, 'audit') && (
-          <li
-            className={`menu-item ${activeTab === 'audit' ? 'active' : ''}`}
-            onClick={() => setActiveTab('audit')}
-          >
-            <i className="fa-solid fa-shield-halved"></i>
-            <span>Audit Logs</span>
-          </li>
-        )}
-      </ul>
-
-      <div className="sidebar-footer">
-        <div className="role-indicator">
-          <span className="role-label">Logged Access Level</span>
-          <select
-            className="role-select"
-            value={currentRoleValue}
-            onChange={handleRoleChange}
-          >
-            <option value="administrator">Administrator</option>
-            <option value="analyst">Data Analyst</option>
-            <option value="planning_officer">Resource Planning Officer</option>
-            <option value="department_officer">Department Officer</option>
-          </select>
+    <>
+      <aside className="sidebar">
+        <div className="sidebar-header">
+          <i className="fa-solid fa-chart-line"></i>
+          <h1>ASTRA</h1>
         </div>
-      </div>
-    </aside>
+
+        <ul className="sidebar-menu">
+          {MENU_ITEMS.map((item) => {
+            const isAccessible = canAccessPage(user, item.id);
+            const authorizedRoles = getAuthorizedRolesForPage(item.id);
+            const isHovered = hoveredLockedTab === item.id;
+
+            if (isAccessible) {
+              return (
+                <li
+                  key={item.id}
+                  className={`menu-item ${activeTab === item.id ? 'active' : ''}`}
+                  onClick={() => setActiveTab(item.id)}
+                >
+                  <i className={`fa-solid ${item.icon}`}></i>
+                  <span>{item.label}</span>
+                </li>
+              );
+            }
+
+            return (
+              <li
+                key={item.id}
+                className="menu-item locked"
+                onClick={() => handleLockedItemClick(item)}
+                onMouseEnter={() => setHoveredLockedTab(item.id)}
+                onMouseLeave={() => setHoveredLockedTab(null)}
+                style={{ position: 'relative' }}
+              >
+                <i className={`fa-solid ${item.icon}`}></i>
+                <span>{item.label}</span>
+                <span className="lock-badge" title="Access Locked">
+                  <i className="fa-solid fa-lock"></i>
+                </span>
+
+                {isHovered && (
+                  <div className="locked-popover">
+                    <div className="locked-popover-title">
+                      <i className="fa-solid fa-lock"></i> Access Restricted
+                    </div>
+                    <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: '4px' }}>
+                      Accessible to:
+                    </div>
+                    <ul style={{ margin: 0, paddingLeft: '14px', fontSize: '0.8rem' }}>
+                      {authorizedRoles.map((role) => (
+                        <li key={role} style={{ margin: '3px 0' }}>
+                          <span
+                            className="locked-role-option"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleOpenRoleSwitch(role);
+                            }}
+                          >
+                            {role}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+
+        <div className="sidebar-footer">
+          <div className="role-indicator">
+            <span className="role-label">Logged Access Level</span>
+            <div className="role-badge-display">
+              <i className="fa-solid fa-user-shield" style={{ marginRight: '8px', color: 'var(--accent-color)' }}></i>
+              <span>{user?.role || 'Officer'}</span>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <RoleSwitchModal
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        targetRole={selectedTargetRole}
+        currentRole={user?.role}
+        onConfirmSignOut={handleConfirmSignOut}
+      />
+    </>
   );
 };
 
