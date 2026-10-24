@@ -1,6 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Line } from 'react-chartjs-2';
 import { useAuth } from '../context/AuthContext';
+
+const RESOURCE_MAP = {
+  enrollment_kits: 'Aadhaar Enrollment Kits',
+  biometric_scanners: 'Biometric Iris Scanners',
+  personnel_units: 'Trained Personnel (Units)'
+};
 
 const Forecasting = ({ filters }) => {
   const { user, hasPermission } = useAuth();
@@ -8,88 +14,64 @@ const Forecasting = ({ filters }) => {
   const [horizon, setHorizon] = useState(6);
   const [loading, setLoading] = useState(false);
   const [chartData, setChartData] = useState(null);
-  
+  const [modelName, setModelName] = useState('Prophet (Python Core)');
+  const [errorMsg, setErrorMsg] = useState(null);
+  const [isLive, setIsLive] = useState(false);
+
   const [metrics, setMetrics] = useState({ mae: '12.42', rmse: '16.89', mape: '4.12%' });
 
-  const fetchForecast = () => {
-    setLoading(true);
-    // Simulate API call to FastAPI
-    setTimeout(() => {
-      setLoading(false);
-      calculateChart();
-    }, 1200);
-  };
+  // Map internal state to real backend resource name
+  const resourceName = RESOURCE_MAP[resourceType] || 'Aadhaar Enrollment Kits';
+  const state = (filters?.state && filters.state !== 'all') ? filters.state : 'maharashtra';
+  const district = (filters?.district && filters.district !== 'all') ? filters.district : 'mumbai_city';
 
-  const calculateChart = () => {
-    const activeRegion = filters.state || 'all';
-    
-    // Mock regional trends
-    let history = [100, 105, 112, 120, 122, 130, 132, 140, 145, 148, 152, 160];
-    let forecast = [165, 168, 172, 175, 180, 183];
-    let maeVal = '6.2';
-    let rmseVal = '8.5';
-    let mapeVal = '3.2%';
-
-    if (activeRegion === 'maharashtra') {
-      history = [30, 32, 35, 38, 39, 42, 43, 46, 48, 50, 52, 55];
-      forecast = [57, 59, 61, 63, 65, 67];
-      maeVal = '2.1'; rmseVal = '2.9'; mapeVal = '4.5%';
-    } else if (activeRegion === 'uttar_pradesh') {
-      history = [45, 48, 52, 55, 56, 60, 61, 65, 67, 68, 70, 74];
-      forecast = [76, 78, 80, 82, 84, 86];
-      maeVal = '3.2'; rmseVal = '4.1'; mapeVal = '4.9%';
-    } else if (activeRegion === 'karnataka') {
-      history = [10, 9, 8, 9, 8, 8, 10, 12, 7, 6, 5, 4];
-      forecast = [4, 4, 3, 3, 2, 2];
-      maeVal = '1.4'; rmseVal = '1.9'; mapeVal = '12.1%';
-    }
-
-    setMetrics({ mae: maeVal, rmse: rmseVal, mape: mapeVal });
-
-    const historyLabels = ['Sep 25', 'Oct 25', 'Nov 25', 'Dec 25', 'Jan 26', 'Feb 26', 'Mar 26', 'Apr 26', 'May 26', 'Jun 26', 'Jul 26', 'Aug 26'];
-    const forecastLabels = ['Sep 26', 'Oct 26', 'Nov 26', 'Dec 26', 'Jan 27', 'Feb 27'].slice(0, horizon);
-    
+  // Build ChartJS dataset from raw API data
+  const renderChart = (history, predictions) => {
+    const historyLabels = history.map(h => h.period);
+    const forecastLabels = predictions.map(p => p.period);
     const labels = [...historyLabels, ...forecastLabels];
-    
-    const historyPoints = [...history];
-    const forecastPoints = Array(12).fill(null);
-    forecastPoints[11] = history[11];
-    forecastPoints.push(...forecast.slice(0, horizon));
 
-    const lowerBounds = Array(12).fill(null);
-    const upperBounds = Array(12).fill(null);
-    lowerBounds[11] = history[11];
-    upperBounds[11] = history[11];
-    
-    forecast.slice(0, horizon).forEach((val, idx) => {
-      const uncertainty = val * 0.08 * (idx + 1);
-      lowerBounds.push(val - uncertainty);
-      upperBounds.push(val + uncertainty);
-    });
+    const historyPoints = history.map(h => h.value);
+    const forecastPoints = Array(history.length).fill(null);
+    if (history.length > 0) {
+      forecastPoints[history.length - 1] = history[history.length - 1].value;
+    }
+    forecastPoints.push(...predictions.map(p => p.predictedValue));
+
+    const lowerBounds = Array(history.length).fill(null);
+    const upperBounds = Array(history.length).fill(null);
+    if (history.length > 0) {
+      lowerBounds[history.length - 1] = history[history.length - 1].value;
+      upperBounds[history.length - 1] = history[history.length - 1].value;
+    }
+    lowerBounds.push(...predictions.map(p => p.lowerBound));
+    upperBounds.push(...predictions.map(p => p.upperBound));
 
     setChartData({
-      labels: labels,
+      labels,
       datasets: [
         {
-          label: 'Historical Allocation',
+          label: 'Historical Allocation (Database)',
           data: historyPoints,
           borderColor: '#5bc0be',
           borderWidth: 2,
+          pointBackgroundColor: '#5bc0be',
           tension: 0.2
         },
         {
-          label: 'Prophet Demand Forecast',
+          label: 'Prophet Demand Forecast (ML Engine)',
           data: forecastPoints,
           borderColor: '#f59e0b',
           borderDash: [5, 5],
           borderWidth: 2,
+          pointBackgroundColor: '#f59e0b',
           tension: 0.2
         },
         {
           label: 'Upper Confidence Limit (95%)',
           data: upperBounds,
           borderColor: 'rgba(245, 158, 11, 0.15)',
-          backgroundColor: 'rgba(245, 158, 11, 0.05)',
+          backgroundColor: 'rgba(245, 158, 11, 0.08)',
           fill: '+1',
           pointRadius: 0,
           tension: 0.2
@@ -106,9 +88,107 @@ const Forecasting = ({ filters }) => {
     });
   };
 
+  // Real API call to Backend Gateway -> ML Service
+  const fetchForecast = useCallback(async () => {
+    setLoading(true);
+    setErrorMsg(null);
+
+    const token = localStorage.getItem('astra_token');
+    
+    try {
+      const response = await fetch('/api/v1/forecasts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token ? `Bearer ${token}` : ''
+        },
+        body: JSON.stringify({
+          resourceName,
+          state,
+          district,
+          horizon: parseInt(horizon)
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const predictions = data.predictions || [];
+        const history = data.history || [];
+        const meta = data.metadata || {};
+
+        setModelName(meta.algorithm || 'Prophet (Python Core)');
+        setIsLive(true);
+
+        const formatMetric = (val) => {
+          if (typeof val === 'number') return val.toFixed(2);
+          return val || '0.00';
+        };
+
+        setMetrics({
+          mae: formatMetric(meta.mae),
+          rmse: formatMetric(meta.rmse),
+          mape: `${formatMetric(meta.mape)}%`
+        });
+
+        renderChart(history, predictions);
+      } else {
+        const errData = await response.json().catch(() => ({}));
+        const errMsg = errData.error || `Server responded with status ${response.status}`;
+        console.warn('Backend API notice:', errMsg);
+        setErrorMsg(errMsg);
+        setIsLive(false);
+        fallbackSimulation();
+      }
+    } catch (err) {
+      console.warn('Network offline or backend unreachable. Falling back to local simulation mode.', err);
+      setErrorMsg('API server unreachable. Displaying cached simulation projection.');
+      setIsLive(false);
+      fallbackSimulation();
+    } finally {
+      setLoading(false);
+    }
+  }, [resourceName, state, district, horizon]);
+
+  // Fallback simulation when offline or insufficient regional data points
+  const fallbackSimulation = () => {
+    const historyMonths = [
+      '2025-09', '2025-10', '2025-11', '2025-12',
+      '2026-01', '2026-02', '2026-03', '2026-04',
+      '2026-05', '2026-06', '2026-07', '2026-08'
+    ];
+
+    let baseHistory = [30, 32, 35, 38, 39, 42, 43, 46, 48, 50, 52, 55];
+    if (state === 'karnataka') baseHistory = [10, 9, 8, 9, 8, 8, 10, 12, 7, 6, 5, 4];
+    if (state === 'uttar_pradesh') baseHistory = [45, 48, 52, 55, 56, 60, 61, 65, 67, 68, 70, 74];
+
+    const history = historyMonths.map((m, idx) => ({
+      period: m,
+      value: baseHistory[idx] || 30
+    }));
+
+    const lastVal = baseHistory[baseHistory.length - 1];
+    const predictions = [];
+    for (let i = 1; i <= horizon; i++) {
+      const monthNum = (8 + i);
+      const year = monthNum > 12 ? 2027 : 2026;
+      const mStr = String(monthNum > 12 ? monthNum - 12 : monthNum).padStart(2, '0');
+      const pred = Math.round(lastVal * (1 + 0.04 * i));
+      predictions.push({
+        period: `${year}-${mStr}`,
+        predictedValue: pred,
+        lowerBound: Math.max(0, Math.round(pred * 0.92)),
+        upperBound: Math.round(pred * 1.08)
+      });
+    }
+
+    setMetrics({ mae: '3.12', rmse: '4.25', mape: '4.60%' });
+    setModelName('Prophet v1.2 (Simulation Fallback)');
+    renderChart(history, predictions);
+  };
+
   useEffect(() => {
-    calculateChart();
-  }, [filters, resourceType, horizon]);
+    fetchForecast();
+  }, [fetchForecast]);
 
   const canGenerate = hasPermission('generate_forecasts');
 
@@ -154,12 +234,29 @@ const Forecasting = ({ filters }) => {
         )}
       </div>
 
+      {errorMsg && (
+        <div style={{
+          backgroundColor: 'rgba(239, 68, 68, 0.1)',
+          border: '1px solid rgba(239, 68, 68, 0.3)',
+          color: '#fca5a5',
+          padding: '10px 16px',
+          borderRadius: '8px',
+          marginBottom: '16px',
+          fontSize: '13px'
+        }}>
+          <i className="fa-solid fa-circle-info" style={{ marginRight: '8px' }}></i>
+          {errorMsg}
+        </div>
+      )}
+
       <div className="visual-card">
         <div className="visual-card-title">
-          <span>Resource demand forecasting (Prophet Time-Series fitting)</span>
-          <span className="status-badge ready"><i className="fa-solid fa-server"></i> Model: Prophet v1.2</span>
+          <span>Resource demand forecasting ({state} / {district})</span>
+          <span className={`status-badge ${isLive ? 'ready' : ''}`} style={{ backgroundColor: isLive ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.15)', color: isLive ? '#10b981' : '#f59e0b' }}>
+            <i className={`fa-solid ${isLive ? 'fa-satellite-dish' : 'fa-server'}`}></i> {modelName} {isLive && '(Live API)'}
+          </span>
         </div>
-        <p className="visual-card-desc">Solid line indicates historical allocations. Dotted line indicates forecasts. Shaded band represents 95% confidence intervals.</p>
+        <p className="visual-card-desc">Solid line indicates real historical allocations from database. Dotted line indicates Prophet forecasts. Shaded band represents 95% confidence intervals.</p>
         
         <div className="chart-container" style={{ height: '380px' }}>
           {chartData && (
