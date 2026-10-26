@@ -1,43 +1,80 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 
 const AuditLogs = () => {
-  const [logs, setLogs] = useState([
-    { timestamp: '2026-08-16 23:15', ip: '10.240.12.82', email: 'admin@uidai.gov.in', role: 'Administrator', action: 'User session authenticated successfully via JWT gateway', status: 'Success' },
-    { timestamp: '2026-08-16 22:50', ip: '10.240.45.101', email: 'a.sen@nic.in', role: 'Data Analyst', action: 'Ingested dataset D-8021: mh_demographics_q2_2026.csv', status: 'Success' },
-    { timestamp: '2026-08-16 21:05', ip: '10.240.80.32', email: 'r.subra@nic.in', role: 'Resource Planning Officer', action: 'Initiated Prophet model fitting: Mumbai District — Enrollment Kits', status: 'Success' },
-    { timestamp: '2026-08-16 19:42', ip: '10.240.10.15', email: 'd.pratap@gov.in', role: 'Department Officer', action: 'Exported demographic report to PDF (Filters: National)', status: 'Success' }
-  ]);
-
+  const [logs, setLogs] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [totalCount, setTotalCount] = useState(0);
 
-  const filteredLogs = logs.filter(log => {
-    return log.action.toLowerCase().includes(searchTerm.toLowerCase()) || 
-           log.email.toLowerCase().includes(searchTerm.toLowerCase());
-  });
+  const fetchLogs = useCallback(async (query = '') => {
+    setLoading(true);
+    const token = localStorage.getItem('astra_token');
+    try {
+      const url = query ? `/api/v1/audit/logs?search=${encodeURIComponent(query)}` : '/api/v1/audit/logs';
+      const response = await fetch(url, {
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': token ? `Bearer ${token}` : ''
+        }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setLogs(data.logs || []);
+        setTotalCount(data.pagination?.totalItems || (data.logs ? data.logs.length : 0));
+      }
+    } catch (err) {
+      console.warn('Audit logs fetch error:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchLogs();
+  }, [fetchLogs]);
+
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    fetchLogs(searchTerm);
+  };
 
   return (
     <div>
       <div className="filter-panel" style={{ backgroundColor: 'rgba(255, 255, 255, 0.02)', marginBottom: '24px' }}>
-        <div className="filter-group">
-          <label htmlFor="audit-search-input">Search Action / User</label>
-          <input
-            type="text"
-            id="audit-search-input"
-            className="filter-input"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="e.g. forecast, admin"
-            style={{ minWidth: '300px' }}
-          />
-        </div>
+        <form onSubmit={handleSearchSubmit} style={{ display: 'flex', gap: '12px', alignItems: 'flex-end', flexWrap: 'wrap' }}>
+          <div className="filter-group">
+            <label htmlFor="audit-search-input">Search Audit Log Records</label>
+            <input
+              type="text"
+              id="audit-search-input"
+              className="filter-input"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Filter by keyword, email, or action..."
+              style={{ minWidth: '320px' }}
+            />
+          </div>
+          <button type="submit" className="btn" style={{ height: '42px', marginBottom: '1px' }}>
+            <i className="fa-solid fa-magnifying-glass"></i> Search Logs
+          </button>
+          <button
+            type="button"
+            onClick={() => { setSearchTerm(''); fetchLogs(''); }}
+            className="btn"
+            style={{ height: '42px', marginBottom: '1px', backgroundColor: '#334155' }}
+          >
+            <i className="fa-solid fa-rotate-left"></i> Reset
+          </button>
+        </form>
       </div>
 
       <div className="visual-card">
         <div className="visual-card-title">
-          <span>Security & Audit Trails (Immutable Repository)</span>
-          <i className="fa-solid fa-clock text-muted"></i>
+          <span>Security & Audit Trails (Immutable MongoDB Repository)</span>
+          <span className="status-badge ready">{totalCount} Logged Events</span>
         </div>
-        <p className="visual-card-desc">Tracks authentication events, user-level file uploads, forecasts runs, and permissions configuration.</p>
+        <p className="visual-card-desc">Tracks authentication events, user-level file uploads, forecasts runs, and permissions configuration recorded in real time.</p>
+
         <div style={{ overflowX: 'auto' }}>
           <table className="astra-table">
             <thead>
@@ -51,20 +88,32 @@ const AuditLogs = () => {
               </tr>
             </thead>
             <tbody>
-              {filteredLogs.map((log, index) => (
-                <tr key={index}>
-                  <td className="text-code" style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{log.timestamp}</td>
-                  <td className="text-code" style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{log.ip}</td>
-                  <td>{log.email}</td>
-                  <td><span className="text-code" style={{ fontSize: '0.75rem' }}>{log.role}</span></td>
-                  <td>{log.action}</td>
-                  <td>
-                    <span className="status-badge ready" style={{ padding: '2px 8px', fontSize: '0.75rem' }}>
-                      {log.status}
-                    </span>
+              {logs.length > 0 ? (
+                logs.map((log) => (
+                  <tr key={log._id}>
+                    <td className="text-code" style={{ whiteSpace: 'nowrap' }}>
+                      {log.timestamp ? new Date(log.timestamp).toLocaleString() : log.createdAt ? new Date(log.createdAt).toLocaleString() : 'N/A'}
+                    </td>
+                    <td className="text-code">{log.ipAddress || '127.0.0.1'}</td>
+                    <td><strong>{log.email || 'System'}</strong></td>
+                    <td>
+                      <span className="status-badge ready">{log.roleName || 'System'}</span>
+                    </td>
+                    <td>{log.action}</td>
+                    <td>
+                      <span className={`status-badge ${log.status === 'Success' ? 'ready' : 'failed'}`}>
+                        {log.status || 'Success'}
+                      </span>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="6" style={{ textAlign: 'center', color: '#a0aec0', padding: '24px' }}>
+                    {loading ? 'Querying audit security database...' : 'No audit entries match current filter.'}
                   </td>
                 </tr>
-              ))}
+              )}
             </tbody>
           </table>
         </div>
