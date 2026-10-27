@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
 const dotenv = require('dotenv');
+const client = require('prom-client');
 const connectDB = require('./config/db');
 
 // Load environment variables
@@ -11,6 +12,30 @@ dotenv.config();
 connectDB();
 
 const app = express();
+
+// Initialize Prometheus Default Metrics (CPU, Memory, Event Loop)
+client.collectDefaultMetrics({ timeout: 5000 });
+
+// Custom HTTP Request Duration Histogram
+const httpRequestDurationMicroseconds = new client.Histogram({
+  name: 'http_request_duration_ms',
+  help: 'Duration of HTTP requests in ms',
+  labelNames: ['method', 'route', 'code'],
+  buckets: [50, 100, 200, 300, 400, 500, 750, 1000, 2000]
+});
+
+// Middleware to record request metrics
+app.use((req, res, next) => {
+  const start = Date.now();
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    const routePath = req.route ? req.route.path : req.path;
+    httpRequestDurationMicroseconds
+      .labels(req.method, routePath, res.statusCode)
+      .observe(duration);
+  });
+  next();
+});
 
 // Middlewares
 app.use(cors({
@@ -42,6 +67,12 @@ app.use('/api/v1/datasets', datasetRoutes);
 app.use('/api/v1/analytics', analyticsRoutes);
 app.use('/api/v1/forecasts', forecastRoutes);
 app.use('/api/v1/audit', auditRoutes);
+
+// Prometheus Scrape Endpoint
+app.get('/metrics', async (req, res) => {
+  res.set('Content-Type', client.register.contentType);
+  res.end(await client.register.metrics());
+});
 
 // Root Liveness Healthcheck
 app.get('/health', (req, res) => {
