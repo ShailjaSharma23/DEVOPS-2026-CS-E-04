@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: astra-backend-deployment
+  labels:
+    app: astra-backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: astra-backend
+  template:
+    metadata:
+      labels:
+        app: astra-backend
+    spec:
+      containers:
+      - name: astra-backend
+        image: sn612/astra-backend:v1
+        ports:
+        - containerPort: 5000
+        env:
+        - name: PORT
+          value: "5000"
+        resources:
+          limits:
+            memory: "256Mi"
+            cpu: "500m"
+          requests:
+            memory: "128Mi"
+            cpu: "200m"
