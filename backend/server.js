@@ -1,3 +1,5 @@
+const dns = require('dns');
+dns.setServers(['8.8.8.8', '1.1.1.1']);
 const express = require('express');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
@@ -67,6 +69,18 @@ app.use('/api/v1/datasets', datasetRoutes);
 app.use('/api/v1/analytics', analyticsRoutes);
 app.use('/api/v1/forecasts', forecastRoutes);
 app.use('/api/v1/audit', auditRoutes);
+
+// Root Endpoint (Fixes "Cannot GET /")
+app.get('/', (req, res) => {
+  res.status(200).json({
+    project: 'ASTRA API',
+    status: 'Operational',
+    version: '1.0.0',
+    documentation: '/api/v1',
+    health: '/health',
+    metrics: '/metrics'
+  });
+});
 
 // Prometheus Scrape Endpoint
 app.get('/metrics', async (req, res) => {
