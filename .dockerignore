@@ -1,0 +1,43 @@
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.cert
+*.p12
+
+# Node.js
+node_modules/
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+.npm
+.yarn/
+
+# Frontend build
+frontend/dist/
+frontend/build/
+frontend/.vite/
+frontend/node_modules/
+
+# Backend
+backend/uploads/
+backend/node_modules/
+backend/package-lock.json
+
+# Python / ML
+__pycache__/
+*.py[cod]
+venv/
+.venv/
+
+# OS / Editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+
+# Docker / Monitoring data
+data/
+*.log
