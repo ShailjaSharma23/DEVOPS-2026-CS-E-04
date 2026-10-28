@@ -1,4 +1,5 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
+import { API_BASE } from '../config';
 
 const AuthContext = createContext(null);
 
@@ -12,7 +13,7 @@ export const AuthProvider = ({ children }) => {
     const checkSession = async () => {
       if (token) {
         try {
-          const response = await fetch('/api/v1/auth/session', {
+          const response = await fetch(`${API_BASE}/api/v1/auth/session`, {
             headers: {
               'Authorization': `Bearer ${token}`
             }
@@ -22,22 +23,19 @@ export const AuthProvider = ({ children }) => {
             const data = await response.json();
             setUser(data.user);
           } else if (response.status >= 500) {
-            // 5xx = server/proxy unavailable (e.g. Vite returns 502 when backend is offline).
-            // This is NOT an auth failure — treat it as offline and fall back to localStorage,
-            // the same way the catch block handles a thrown network error.
+            // 5xx = server/proxy unavailable. Treat as offline fallback.
             console.warn('Backend API offline (server error). Operating in simulation fallback mode.');
             const storedUser = localStorage.getItem('astra_user');
             if (storedUser) {
               setUser(JSON.parse(storedUser));
             }
           } else {
-            // Genuine auth failure (401, 403): token is invalid or expired — invalidate session.
+            // Genuine auth failure (401, 403): token is invalid or expired
             logout();
           }
         } catch (err) {
-          // fetch() threw — complete network failure (ECONNREFUSED etc.)
+          // fetch() threw - complete network failure
           console.warn('Backend API offline. Operating in simulation fallback mode.');
-          // Offline mock resolution based on storage
           const storedUser = localStorage.getItem('astra_user');
           if (storedUser) {
             setUser(JSON.parse(storedUser));
@@ -52,7 +50,7 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      const response = await fetch('/api/v1/auth/login', {
+      const response = await fetch(`${API_BASE}/api/v1/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })
@@ -71,7 +69,6 @@ export const AuthProvider = ({ children }) => {
       }
     } catch (err) {
       console.warn('Backend server offline. Initiating mock login simulation.');
-      // Local fallback simulation
       let role = 'Administrator';
       let permissions = ['manage_users', 'view_audit_logs', 'upload_datasets', 'manage_datasets', 'generate_forecasts'];
       
@@ -106,7 +103,7 @@ export const AuthProvider = ({ children }) => {
   const logout = async () => {
     if (token && !token.startsWith('mock')) {
       try {
-        await fetch('/api/v1/auth/logout', {
+        await fetch(`${API_BASE}/api/v1/auth/logout`, {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${token}` }
         });
@@ -122,7 +119,6 @@ export const AuthProvider = ({ children }) => {
 
   const hasPermission = (permission) => {
     if (!user || !user.permissions) return false;
-    // Admins bypass all restrictions
     if (user.role === 'Administrator') return true;
     return user.permissions.includes(permission);
   };

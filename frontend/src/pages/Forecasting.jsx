@@ -1,3 +1,4 @@
+import { API_BASE } from '../config';
 import React, { useState, useEffect, useCallback } from 'react';
 import { Line } from 'react-chartjs-2';
 import { useAuth } from '../context/AuthContext';
@@ -96,7 +97,7 @@ const Forecasting = ({ filters }) => {
     const token = localStorage.getItem('astra_token');
     
     try {
-      const response = await fetch('/api/v1/forecasts', {
+      const response = await fetch(`${API_BASE}/api/v1/forecasts`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

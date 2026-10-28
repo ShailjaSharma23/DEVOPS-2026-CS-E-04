@@ -1,3 +1,4 @@
+import { API_BASE } from '../config';
 import React, { useState, useEffect, useCallback } from 'react';
 import { Doughnut, Pie } from 'react-chartjs-2';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
@@ -26,8 +27,8 @@ const Analytics = ({ filters }) => {
 
     try {
       const [demoRes, bioRes] = await Promise.allSettled([
-        fetch(`/api/v1/analytics/demographics${queryStr}`, { headers }),
-        fetch(`/api/v1/analytics/biometrics${queryStr}`, { headers })
+        fetch(`${API_BASE}/api/v1/analytics/demographics${queryStr}`, { headers }),
+        fetch(`${API_BASE}/api/v1/analytics/biometrics${queryStr}`, { headers })
       ]);
 
       let totalMale = 0;

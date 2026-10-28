@@ -1,3 +1,4 @@
+import { API_BASE } from '../config';
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 
@@ -18,7 +19,7 @@ const Users = () => {
     setLoading(true);
     const token = localStorage.getItem('astra_token');
     try {
-      const response = await fetch('/api/v1/users', {
+      const response = await fetch(`${API_BASE}/api/v1/users`, {
         headers: {
           'Accept': 'application/json',
           'Authorization': token ? `Bearer ${token}` : ''
@@ -46,7 +47,7 @@ const Users = () => {
 
     const token = localStorage.getItem('astra_token');
     try {
-      const response = await fetch('/api/v1/users', {
+      const response = await fetch(`${API_BASE}/api/v1/users`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -80,7 +81,7 @@ const Users = () => {
     const token = localStorage.getItem('astra_token');
     const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
     try {
-      const response = await fetch(`/api/v1/users/${userId}/status`, {
+      const response = await fetch(`${API_BASE}/api/v1/users/${userId}/status`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',

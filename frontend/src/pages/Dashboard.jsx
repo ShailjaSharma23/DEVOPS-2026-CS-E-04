@@ -1,3 +1,4 @@
+import { API_BASE } from '../config';
 import React, { useState, useEffect, useCallback } from 'react';
 import { Line, Bar } from 'react-chartjs-2';
 import {
@@ -55,10 +56,10 @@ const Dashboard = ({ filters }) => {
     try {
       // Execute parallel queries to backend analytics gateway
       const [demoRes, bioRes, datasetRes, resAllocRes] = await Promise.allSettled([
-        fetch(`/api/v1/analytics/demographics${queryStr}`, { headers }),
-        fetch(`/api/v1/analytics/biometrics${queryStr}`, { headers }),
-        fetch('/api/v1/datasets', { headers }),
-        fetch(`/api/v1/analytics/resources${queryStr}`, { headers })
+        fetch(`${API_BASE}/api/v1/analytics/demographics${queryStr}`, { headers }),
+        fetch(`${API_BASE}/api/v1/analytics/biometrics${queryStr}`, { headers }),
+        fetch(`${API_BASE}/api/v1/datasets`, { headers }),
+        fetch(`${API_BASE}/api/v1/analytics/resources${queryStr}`, { headers })
       ]);
 
       let totalDemo = 0;

@@ -1,3 +1,4 @@
+import { API_BASE } from '../config';
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 
@@ -15,7 +16,7 @@ const Datasets = () => {
     setLoading(true);
     const token = localStorage.getItem('astra_token');
     try {
-      const response = await fetch('/api/v1/datasets', {
+      const response = await fetch(`${API_BASE}/api/v1/datasets`, {
         headers: {
           'Accept': 'application/json',
           'Authorization': token ? `Bearer ${token}` : ''
@@ -59,7 +60,7 @@ const Datasets = () => {
     formData.append('name', selectedFile.name);
 
     try {
-      const response = await fetch('/api/v1/datasets/upload', {
+      const response = await fetch(`${API_BASE}/api/v1/datasets/upload`, {
         method: 'POST',
         headers: {
           'Authorization': token ? `Bearer ${token}` : ''

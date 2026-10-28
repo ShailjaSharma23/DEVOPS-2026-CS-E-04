@@ -1,3 +1,4 @@
+import { API_BASE } from '../config';
 import React, { useState, useEffect, useCallback } from 'react';
 
 const AuditLogs = () => {
@@ -10,7 +11,7 @@ const AuditLogs = () => {
     setLoading(true);
     const token = localStorage.getItem('astra_token');
     try {
-      const url = query ? `/api/v1/audit/logs?search=${encodeURIComponent(query)}` : '/api/v1/audit/logs';
+      const url = query ? `${API_BASE}/api/v1/audit/logs?search=${encodeURIComponent(query)}` : `${API_BASE}/api/v1/audit/logs`;
       const response = await fetch(url, {
         headers: {
           'Accept': 'application/json',
