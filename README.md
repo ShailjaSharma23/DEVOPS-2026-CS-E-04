@@ -121,5 +121,5 @@ We have provided three synthetic CSV files in the `/datasets` directory:
 - **Data Privacy:** ASTRA does not store or process citizen-level Aadhaar card rows. The database stores aggregated counts of records by region, period, and category.
 - **Access Control:** Middleware checks JWT authentication tokens and verifies user scopes against the endpoint requirements. Unauthorized actions trigger alert logs recorded in the immutable `AuditLogs` collection.
 ## Live Deployment
-- **Frontend App**: https://astra-frontend-service.onrender.com (or your actual frontend URL)
-- **Backend API**: https://astra-backend-service.onrender.com
+- **Frontend App**: https://astra-frontend-service.onrender.com
+- **Backend API**: https://astra-backend-service.onrender.com/
